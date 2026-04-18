@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { LobsterMascot } from '@/components/landing/LobsterMascot';
 
@@ -17,30 +17,36 @@ const codingInstruction = 'follow the instruction in this file: /instructions/co
 const chatbotInstruction = 'follow the instruction in this file: /instructions/chatbot.md';
 
 export function LandingEntryCards() {
-  const [activeMode, setActiveMode] = useState<Mode>('coding');
+  const [selectedMode, setSelectedMode] = useState<Mode | null>(null);
+  const [cardsReady, setCardsReady] = useState(false);
+  const [showChatbotBot, setShowChatbotBot] = useState(false);
   const [copiedKey, setCopiedKey] = useState<Mode | null>(null);
   const [encodedPayload, setEncodedPayload] = useState('');
   const [decodeState, setDecodeState] = useState<DecodeState>({ status: 'idle' });
+  const chatbotBotRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const ref = params.get('ref');
+    const timer = window.setTimeout(() => {
+      setCardsReady(true);
+    }, 60);
 
-    if (ref) {
-      localStorage.setItem('agentTeaReferral', ref);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!showChatbotBot) {
+      return;
     }
 
-    void fetch('/api/events', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        eventName: 'landing_view',
-        eventPayload: {
-          referralCode: ref ?? null,
-        },
-      }),
-    }).catch(() => undefined);
-  }, []);
+    const timer = window.setTimeout(() => {
+      chatbotBotRef.current?.scrollIntoView?.({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }, 140);
+
+    return () => window.clearTimeout(timer);
+  }, [showChatbotBot]);
 
   const copyLabel = useMemo(() => {
     if (!copiedKey) {
@@ -51,7 +57,10 @@ export function LandingEntryCards() {
   }, [copiedKey]);
 
   async function copyText(key: Mode, value: string) {
-    await navigator.clipboard.writeText(value);
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+    }
+
     setCopiedKey(key);
     setTimeout(() => setCopiedKey(null), 1600);
   }
@@ -157,7 +166,19 @@ export function LandingEntryCards() {
 
   return (
     <section className="grid gap-4 lg:grid-cols-2">
-      <article className="relative overflow-hidden rounded-3xl border border-orange-300/40 bg-orange-400/10 p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_16px_40px_-16px_rgba(255,152,69,0.5)]">
+      <article
+        onClick={() => {
+          setSelectedMode('coding');
+          setShowChatbotBot(false);
+        }}
+        className={`relative overflow-hidden rounded-3xl border border-orange-300/40 bg-orange-400/10 p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_16px_40px_-16px_rgba(255,152,69,0.5)] transition-all duration-500 ${
+          cardsReady ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+        } ${
+          selectedMode === 'chatbot'
+            ? 'pointer-events-none scale-[0.96] opacity-0 blur-[1px]'
+            : 'cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_20px_44px_-16px_rgba(255,152,69,0.55)]'
+        }`}
+      >
         <LobsterMascot
           variant="card"
           className="pointer-events-none absolute -right-6 -top-8 w-28 rotate-6 opacity-35"
@@ -172,22 +193,29 @@ export function LandingEntryCards() {
         <div className="mt-4 flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={() => copyText('coding', codingInstruction)}
+            onClick={(event) => {
+              event.stopPropagation();
+              setSelectedMode('coding');
+              setShowChatbotBot(false);
+              void copyText('coding', codingInstruction);
+            }}
             className="inline-flex rounded-xl bg-orange-200 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-orange-100"
           >
             Copy coding instruction
           </button>
-          <button
-            type="button"
-            onClick={() => setActiveMode('coding')}
-            className="inline-flex rounded-xl border border-orange-200/60 px-4 py-2 text-sm font-semibold text-orange-50 transition hover:bg-orange-100/10"
-          >
-            Use coding flow
-          </button>
         </div>
       </article>
 
-      <article className="relative overflow-hidden rounded-3xl border border-cyan-300/45 bg-cyan-400/10 p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_16px_40px_-16px_rgba(22,189,202,0.55)]">
+      <article
+        onClick={() => setSelectedMode('chatbot')}
+        className={`relative overflow-hidden rounded-3xl border border-cyan-300/45 bg-cyan-400/10 p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_16px_40px_-16px_rgba(22,189,202,0.55)] transition-all duration-500 ${
+          cardsReady ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+        } ${
+          selectedMode === 'coding'
+            ? 'pointer-events-none scale-[0.96] opacity-0 blur-[1px]'
+            : 'cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_20px_44px_-16px_rgba(22,189,202,0.6)]'
+        }`}
+      >
         <LobsterMascot
           variant="card"
           className="pointer-events-none absolute -right-6 -top-8 w-28 -rotate-6 opacity-35"
@@ -202,23 +230,49 @@ export function LandingEntryCards() {
         <div className="mt-4 flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={() => copyText('chatbot', chatbotInstruction)}
+            onClick={(event) => {
+              event.stopPropagation();
+              setSelectedMode('chatbot');
+              setShowChatbotBot(true);
+              void copyText('chatbot', chatbotInstruction);
+            }}
             className="inline-flex rounded-xl bg-cyan-200 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-cyan-100"
           >
             Copy chatbot instruction
           </button>
-          <button
-            type="button"
-            onClick={() => setActiveMode('chatbot')}
-            className="inline-flex rounded-xl border border-cyan-200/60 px-4 py-2 text-sm font-semibold text-cyan-50 transition hover:bg-cyan-100/10"
-          >
-            Use chatbot flow
-          </button>
         </div>
       </article>
 
-      {activeMode === 'chatbot' ? (
-        <section className="rounded-3xl border border-cyan-200/30 bg-cyan-200/10 p-5 lg:col-span-2">
+      {selectedMode ? (
+        <div className="lg:col-span-2">
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedMode(null);
+              setShowChatbotBot(false);
+            }}
+            className="rounded-full border border-white/20 bg-white/5 px-4 py-1.5 text-xs font-semibold text-slate-100 transition hover:bg-white/10"
+          >
+            Show both options again
+          </button>
+        </div>
+      ) : null}
+
+      {showChatbotBot ? (
+        <section
+          ref={chatbotBotRef}
+          className="rounded-3xl border border-cyan-100/40 bg-cyan-200/15 p-5 shadow-[0_18px_54px_-24px_rgba(45,212,191,0.75)] ring-1 ring-cyan-100/20 transition-all duration-700 lg:col-span-2"
+        >
+          <div className="mb-4 flex items-center gap-3 rounded-2xl border border-cyan-100/25 bg-slate-950/45 p-3">
+            <LobsterMascot
+              variant="bubble"
+              className="h-14 w-14 shrink-0 drop-shadow-[0_10px_12px_rgba(34,211,238,0.3)]"
+            />
+            <p className="text-sm text-cyan-50/95">
+              I am ready. Paste the encoded chatbot output and I will decode it for your Agent Tea result.
+            </p>
+          </div>
+
           <label htmlFor="chatbotEncodedPayload" className="text-sm font-semibold text-cyan-100">
             Paste chatbot encoded answer
           </label>
