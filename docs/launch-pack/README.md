@@ -23,6 +23,8 @@ This folder captures the agreed v1 direction for **Who Approved My Human** and b
 6. [06-spicy-guardrails-README.md](./06-spicy-guardrails-README.md)
 7. [07-zero-friction-flow-README.md](./07-zero-friction-flow-README.md)
 8. [08-visual-identity-figures-README.md](./08-visual-identity-figures-README.md)
+9. [09-question-bank-spec.json](./09-question-bank-spec.json)
+10. [10-name-shortlist-README.md](./10-name-shortlist-README.md)
 
 ## Product Promise (v1)
 
