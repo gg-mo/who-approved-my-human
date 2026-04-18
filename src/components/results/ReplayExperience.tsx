@@ -194,21 +194,25 @@ function ReplayStep({
   );
   const [typedText, setTypedText] = useState('');
 
+  const hasReasoning = Boolean(step.reasoning);
+
   useEffect(() => {
     const timers: Array<ReturnType<typeof setTimeout>> = [];
     timers.push(setTimeout(() => setPhase('options'), STAGE.options));
     timers.push(setTimeout(() => setPhase('highlight'), STAGE.highlight));
-    timers.push(setTimeout(() => setPhase('bubble'), STAGE.bubble));
+    if (hasReasoning) {
+      timers.push(setTimeout(() => setPhase('bubble'), STAGE.bubble));
+    } else {
+      timers.push(setTimeout(onAdvance, STAGE.highlight + 800));
+    }
     return () => timers.forEach(clearTimeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (phase !== 'bubble') return;
     const reasoning = step.reasoning ?? '';
-    if (!reasoning) {
-      const t = setTimeout(onAdvance, STAGE.tail);
-      return () => clearTimeout(t);
-    }
+    if (!reasoning) return;
     const timers: Array<ReturnType<typeof setTimeout>> = [];
     let i = 0;
     const tick = () => {
@@ -278,29 +282,31 @@ function ReplayStep({
             })}
           </ul>
 
-          <div
-            className={`mt-6 transition-all duration-500 ease-[cubic-bezier(0.22,0.61,0.36,1)] ${
-              phase === 'bubble' || phase === 'finale'
-                ? 'opacity-100 translate-y-0'
-                : 'pointer-events-none opacity-0 translate-y-2'
-            }`}
-          >
-            <div className="relative rounded-2xl border border-orange-200/20 bg-orange-200/[0.06] p-4">
-              <span
-                aria-hidden
-                className="absolute -left-2 top-6 h-3 w-3 rotate-45 rounded-[2px] border-b border-l border-orange-200/20 bg-orange-200/[0.06]"
-              />
-              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-orange-200/80">
-                Lobster&apos;s take
-              </p>
-              <p className="mt-2 text-sm leading-6 text-orange-50/95">
-                {typedText}
-                {phase === 'bubble' && typedText.length < (step.reasoning?.length ?? 0) ? (
-                  <span className="tea-caret ml-0.5 inline-block h-4 w-[2px] translate-y-0.5 bg-orange-200" />
-                ) : null}
-              </p>
+          {step.reasoning ? (
+            <div
+              className={`mt-6 transition-all duration-500 ease-[cubic-bezier(0.22,0.61,0.36,1)] ${
+                phase === 'bubble' || phase === 'finale'
+                  ? 'opacity-100 translate-y-0'
+                  : 'pointer-events-none opacity-0 translate-y-2'
+              }`}
+            >
+              <div className="relative rounded-2xl border border-orange-200/20 bg-orange-200/[0.06] p-4">
+                <span
+                  aria-hidden
+                  className="absolute -left-2 top-6 h-3 w-3 rotate-45 rounded-[2px] border-b border-l border-orange-200/20 bg-orange-200/[0.06]"
+                />
+                <p className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-orange-200/80">
+                  Lobster&apos;s take
+                </p>
+                <p className="mt-2 text-sm leading-6 text-orange-50/95">
+                  {typedText}
+                  {phase === 'bubble' && typedText.length < step.reasoning.length ? (
+                    <span className="tea-caret ml-0.5 inline-block h-4 w-[2px] translate-y-0.5 bg-orange-200" />
+                  ) : null}
+                </p>
+              </div>
             </div>
-          </div>
+          ) : null}
         </article>
 
         <div className="mt-5 flex items-center justify-end">
