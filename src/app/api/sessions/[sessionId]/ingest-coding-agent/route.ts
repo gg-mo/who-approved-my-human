@@ -56,8 +56,15 @@ export async function POST(request: Request, context: ParamsContext) {
       return jsonResponse({ error: error.message }, error.status);
     }
 
-    const message = error instanceof Error ? error.message : 'Failed to ingest coding-agent answers';
+    const message =
+      error instanceof Error
+        ? error.message
+        : error && typeof error === 'object' && 'message' in error && typeof (error as { message: unknown }).message === 'string'
+          ? (error as { message: string }).message
+          : 'Failed to ingest coding-agent answers';
     const status = message === 'Session not found' ? 404 : 500;
+
+    console.error('ingest-coding-agent failed', error);
 
     return jsonResponse({ error: message }, status);
   }
