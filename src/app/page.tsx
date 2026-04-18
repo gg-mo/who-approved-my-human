@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import { TypeFigure } from '@/components/figures/TypeFigure';
 import { LandingEntryCards } from '@/components/landing/LandingEntryCards';
 import { LobsterMascot } from '@/components/landing/LobsterMascot';
 import { SocialProofPreview } from '@/components/landing/SocialProofPreview';
@@ -83,11 +82,10 @@ export default function Home() {
             </div>
           </section>
 
-          <div className="tea-scale-in tea-stage-5 mx-auto grid w-full max-w-xs gap-4 rounded-[28px] border border-white/[0.08] bg-white/[0.03] p-5 backdrop-blur-xl">
-            <LobsterMascot variant="hero" className="w-full drop-shadow-[0_18px_28px_rgba(255,90,100,0.22)]" />
-            <TypeFigure
-              typeCode="CKVG"
-              className="mx-auto w-32 rounded-2xl border border-white/[0.08] bg-slate-950/40 p-2"
+          <div className="tea-scale-in tea-stage-5 mx-auto flex w-full max-w-sm items-center justify-center">
+            <LobsterMascot
+              variant="hero"
+              className="h-auto w-full drop-shadow-[0_24px_40px_rgba(255,90,100,0.28)]"
             />
           </div>
         </div>
