@@ -1,5 +1,7 @@
 import { ImageResponse } from 'next/og';
 
+import { TypeFigure } from '@/components/figures/TypeFigure';
+import { LobsterMascot } from '@/components/landing/LobsterMascot';
 import { buildProfileCopy } from '@/lib/results/profile-copy';
 import {
   buildShareCardHighlights,
@@ -93,7 +95,10 @@ export async function GET(request: Request, context: RouteContext) {
           >
             <span>Agent Tea</span>
           </div>
-          <div style={{ fontSize: '68px' }}>🦞</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <TypeFigure typeCode={result.typeCode} style={{ width: '92px', height: '92px' }} />
+            <LobsterMascot variant="card" style={{ width: '92px', height: '92px' }} />
+          </div>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>

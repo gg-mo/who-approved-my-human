@@ -1,9 +1,16 @@
+import { TypeFigure } from '@/components/figures/TypeFigure';
 import { LandingEntryCards } from '@/components/landing/LandingEntryCards';
 import { LobsterMascot } from '@/components/landing/LobsterMascot';
 
 export default function Home() {
   return (
-    <main className="relative isolate overflow-hidden bg-[#0b1220] text-slate-100">
+    <main
+      className="relative isolate overflow-hidden text-slate-100"
+      style={{
+        background:
+          'linear-gradient(145deg, var(--tea-bg-deep) 0%, var(--tea-bg-mid) 45%, var(--tea-bg-glow) 100%)',
+      }}
+    >
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(70rem_35rem_at_12%_8%,rgba(45,212,191,0.24),transparent),radial-gradient(74rem_36rem_at_85%_18%,rgba(251,146,60,0.2),transparent),linear-gradient(145deg,#0b1220_0%,#15182f_45%,#1f1136_100%)]" />
 
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col justify-center px-6 py-16 sm:px-10">
@@ -30,8 +37,9 @@ export default function Home() {
             </button>
           </section>
 
-          <div className="mx-auto w-full max-w-xs rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur">
-            <LobsterMascot className="w-full drop-shadow-[0_24px_30px_rgba(255,90,100,0.32)]" />
+          <div className="mx-auto grid w-full max-w-xs gap-3 rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur">
+            <LobsterMascot variant="hero" className="w-full drop-shadow-[0_24px_30px_rgba(255,90,100,0.32)]" />
+            <TypeFigure typeCode="CKVG" className="mx-auto w-32 rounded-2xl border border-white/10 bg-slate-900/50 p-2" />
           </div>
         </div>
 

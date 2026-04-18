@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from 'react';
 
+import { LobsterMascot } from '@/components/landing/LobsterMascot';
+
 type Mode = 'coding' | 'chatbot';
 
 type DecodeState = {
@@ -101,7 +103,11 @@ export function LandingEntryCards() {
 
   return (
     <section className="grid gap-4 lg:grid-cols-2">
-      <article className="rounded-3xl border border-orange-300/40 bg-orange-400/10 p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_16px_40px_-16px_rgba(255,152,69,0.5)]">
+      <article className="relative overflow-hidden rounded-3xl border border-orange-300/40 bg-orange-400/10 p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_16px_40px_-16px_rgba(255,152,69,0.5)]">
+        <LobsterMascot
+          variant="card"
+          className="pointer-events-none absolute -right-6 -top-8 w-28 rotate-6 opacity-35"
+        />
         <h2 className="text-xl font-bold text-orange-100">Coding Agents</h2>
         <p className="mt-2 text-sm leading-6 text-orange-50/85">
           Paste this line into your coding agent, then let it answer and submit structured ratings.
@@ -127,7 +133,11 @@ export function LandingEntryCards() {
         </div>
       </article>
 
-      <article className="rounded-3xl border border-cyan-300/45 bg-cyan-400/10 p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_16px_40px_-16px_rgba(22,189,202,0.55)]">
+      <article className="relative overflow-hidden rounded-3xl border border-cyan-300/45 bg-cyan-400/10 p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_16px_40px_-16px_rgba(22,189,202,0.55)]">
+        <LobsterMascot
+          variant="card"
+          className="pointer-events-none absolute -right-6 -top-8 w-28 -rotate-6 opacity-35"
+        />
         <h2 className="text-xl font-bold text-cyan-100">Chatbots</h2>
         <p className="mt-2 text-sm leading-6 text-cyan-50/85">
           Use the chatbot prompt guide, then paste the encoded response back here to decode instantly.

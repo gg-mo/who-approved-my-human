@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
+import { TypeFigure } from '@/components/figures/TypeFigure';
 import { LobsterMascot } from '@/components/landing/LobsterMascot';
 import { type NarrativeMode } from '@/lib/results/copy-content';
 import { buildProfileCopy, getDimensionLabels } from '@/lib/results/profile-copy';
@@ -108,7 +109,13 @@ export function ResultsExperience({ result, sessionId }: { result: ResultsPayloa
   }
 
   return (
-    <main className="min-h-screen bg-[#090f1c] px-6 py-12 text-slate-100 sm:px-10">
+    <main
+      className="min-h-screen px-6 py-12 text-slate-100 sm:px-10"
+      style={{
+        background:
+          'linear-gradient(145deg, var(--tea-bg-deep) 0%, var(--tea-bg-mid) 45%, var(--tea-bg-glow) 100%)',
+      }}
+    >
       <div className="mx-auto max-w-6xl">
         <section className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
           <div>
@@ -139,8 +146,15 @@ export function ResultsExperience({ result, sessionId }: { result: ResultsPayloa
               </button>
             </div>
           </div>
-          <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-            <LobsterMascot className="mx-auto w-48 drop-shadow-[0_20px_24px_rgba(255,98,74,0.3)]" />
+          <div className="grid gap-3 rounded-3xl border border-white/10 bg-white/5 p-4">
+            <LobsterMascot
+              variant="hero"
+              className="mx-auto w-44 drop-shadow-[0_20px_24px_rgba(255,98,74,0.3)]"
+            />
+            <TypeFigure
+              typeCode={result.typeCode}
+              className="mx-auto w-36 rounded-2xl border border-white/10 bg-slate-900/50 p-2"
+            />
           </div>
         </section>
 
@@ -256,7 +270,7 @@ export function ResultsExperience({ result, sessionId }: { result: ResultsPayloa
                 </p>
                 {answer.reasoning ? (
                   <div className="mt-2 flex items-start gap-2 rounded-xl border border-orange-200/25 bg-orange-200/10 p-2 text-xs text-orange-100">
-                    <LobsterMascot className="h-10 w-10 shrink-0" />
+                    <LobsterMascot variant="bubble" className="h-10 w-10 shrink-0" />
                     <p>{answer.reasoning}</p>
                   </div>
                 ) : null}
