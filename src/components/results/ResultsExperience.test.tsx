@@ -79,7 +79,7 @@ afterEach(() => {
 
 describe('ResultsExperience', () => {
   it('renders primary result sections', () => {
-    render(<ResultsExperience result={baseResult} />);
+    render(<ResultsExperience result={baseResult} sessionId="session-123" />);
 
     expect(screen.getByRole('heading', { name: 'CKVG' })).toBeInTheDocument();
     expect(screen.getByText(/what your agent likely loves/i)).toBeInTheDocument();
@@ -90,7 +90,7 @@ describe('ResultsExperience', () => {
 
   it('reveals animated answer replay entries over time', async () => {
     vi.useFakeTimers();
-    render(<ResultsExperience result={baseResult} />);
+    render(<ResultsExperience result={baseResult} sessionId="session-123" />);
 
     expect(screen.queryByText(/my human usually gives enough context/i)).not.toBeInTheDocument();
 

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { LobsterMascot } from '@/components/landing/LobsterMascot';
 import { type NarrativeMode } from '@/lib/results/copy-content';
 import { buildProfileCopy, getDimensionLabels } from '@/lib/results/profile-copy';
+import { buildShareCardHighlights, buildShareCardText } from '@/lib/results/share-card';
 import type { DimensionId } from '@/lib/scoring/types';
 
 type ReplayAnswer = {
@@ -49,9 +50,10 @@ function percent(value: number) {
   return Math.round(value * 100);
 }
 
-export function ResultsExperience({ result }: { result: ResultsPayload }) {
+export function ResultsExperience({ result, sessionId }: { result: ResultsPayload; sessionId: string }) {
   const [visibleCount, setVisibleCount] = useState(0);
   const [mode, setMode] = useState<NarrativeMode>('normal');
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
   const profileCopy = useMemo(
     () =>
       buildProfileCopy({
@@ -64,6 +66,21 @@ export function ResultsExperience({ result }: { result: ResultsPayload }) {
     [mode, result.dimensionBreakdown, result.strongestSignals, result.tieFlags, result.typeCode],
   );
   const dimensionLabels = useMemo(() => getDimensionLabels(mode), [mode]);
+  const shareCardUrl = `/api/share-card/${sessionId}?mode=${mode}`;
+  const shareHighlights = useMemo(
+    () => buildShareCardHighlights({ mode, breakdown: result.dimensionBreakdown }),
+    [mode, result.dimensionBreakdown],
+  );
+  const shareText = useMemo(
+    () =>
+      buildShareCardText({
+        mode,
+        typeCode: result.typeCode,
+        nickname: profileCopy.nickname,
+        highlights: shareHighlights,
+      }),
+    [mode, profileCopy.nickname, result.typeCode, shareHighlights],
+  );
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -78,6 +95,17 @@ export function ResultsExperience({ result }: { result: ResultsPayload }) {
 
     return () => clearInterval(timer);
   }, [result.replayAnswers.length]);
+
+  async function copyShareText() {
+    try {
+      const origin = window.location.origin;
+      const payload = `${shareText}\n${origin}/results/${sessionId}`;
+      await navigator.clipboard.writeText(payload);
+      setCopyState('copied');
+    } catch {
+      setCopyState('error');
+    }
+  }
 
   return (
     <main className="min-h-screen bg-[#090f1c] px-6 py-12 text-slate-100 sm:px-10">
@@ -163,6 +191,34 @@ export function ResultsExperience({ result }: { result: ResultsPayload }) {
               );
             })}
           </div>
+        </section>
+
+        <section className="mt-8 rounded-3xl border border-white/10 bg-white/5 p-5">
+          <h2 className="text-lg font-semibold text-cyan-100">Share this tea</h2>
+          <p className="mt-2 text-sm text-slate-300">{shareText}</p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={copyShareText}
+              className="rounded-full bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200"
+            >
+              Copy share text
+            </button>
+            <a
+              href={shareCardUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-full border border-orange-200/50 bg-orange-300/10 px-4 py-2 text-sm font-semibold text-orange-100 hover:bg-orange-300/20"
+            >
+              Open share card
+            </a>
+          </div>
+          {copyState === 'copied' ? (
+            <p className="mt-2 text-xs text-emerald-200">Copied to clipboard.</p>
+          ) : null}
+          {copyState === 'error' ? (
+            <p className="mt-2 text-xs text-rose-200">Clipboard failed. Copy the line manually.</p>
+          ) : null}
         </section>
 
         <section className="mt-8 grid gap-4 lg:grid-cols-2">

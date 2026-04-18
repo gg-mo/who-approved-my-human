@@ -15,5 +15,5 @@ export default async function ResultsPage(context: ParamsContext) {
     notFound();
   }
 
-  return <ResultsExperience result={result} />;
+  return <ResultsExperience result={result} sessionId={sessionId} />;
 }
