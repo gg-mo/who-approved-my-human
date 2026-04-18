@@ -260,6 +260,18 @@ h1, h2, h3 {
 .tea-mood-sway { animation: tea-mood-sway 2200ms ease-in-out infinite; }
 .tea-halo { animation: tea-halo-shine 2800ms ease-in-out infinite; transform-origin: center; }
 
+@keyframes tea-caret-blink {
+  0%, 45% { opacity: 1; }
+  55%, 100% { opacity: 0; }
+}
+.tea-caret { animation: tea-caret-blink 900ms steps(1, end) infinite; }
+
+@keyframes tea-reveal-card {
+  0% { opacity: 0; transform: translateY(8px) scale(0.985); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.tea-reveal-card { animation: tea-reveal-card 520ms var(--ease-keynote) both; }
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .tea-fade-in,
@@ -276,7 +288,9 @@ h1, h2, h3 {
   .tea-mascot-evil,
   .tea-mood-float,
   .tea-mood-sway,
-  .tea-halo {
+  .tea-halo,
+  .tea-caret,
+  .tea-reveal-card {
     animation: none !important;
   }
   .tea-collapse { transition: none; }

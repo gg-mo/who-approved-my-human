@@ -67,7 +67,7 @@ export function LandingEntryCards() {
 
         if (response.ok) {
           if (!cancelled) {
-            window.location.assign(`/results/${codingSessionId}`);
+            window.location.assign(`/replay/${codingSessionId}`);
           }
           return;
         }
@@ -288,7 +288,7 @@ export function LandingEntryCards() {
         body: JSON.stringify({ eventName: 'chatbot_flow_completed', sessionId: sessionData.sessionId }),
       }).catch(() => undefined);
 
-      window.location.assign(`/results/${sessionData.sessionId}`);
+      window.location.assign(`/replay/${sessionData.sessionId}`);
     } catch (error) {
       setDecodeState({
         status: 'error',
