@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 
 import Home from './page';
 
@@ -26,5 +26,15 @@ describe('Home page', () => {
     render(<Home />);
 
     expect(screen.getByRole('button', { name: /start your agent tea test/i })).toBeInTheDocument();
+  });
+
+  it('reveals chatbot encoded input only when chatbot entry is selected', () => {
+    render(<Home />);
+
+    expect(screen.queryByLabelText(/paste chatbot encoded answer/i)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /use chatbot flow/i }));
+
+    expect(screen.getByLabelText(/paste chatbot encoded answer/i)).toBeInTheDocument();
   });
 });
