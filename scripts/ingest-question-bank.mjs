@@ -2,8 +2,10 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { createClient } from '@supabase/supabase-js';
+import { loadScriptEnv } from './load-script-env.mjs';
 
 const defaultSpecPath = 'docs/launch-pack/09-question-bank-spec.json';
+loadScriptEnv();
 
 function requireEnv(name) {
   const value = process.env[name];
