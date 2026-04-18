@@ -231,6 +231,35 @@ h1, h2, h3 {
 }
 .tea-emphasis { animation: tea-emphasis 2400ms var(--ease-keynote) 1 both; }
 
+/* Mood toggle: idle motion for lobster, angel, and devil. */
+@keyframes tea-mascot-bob {
+  0%, 100% { transform: translateY(0) rotate(-1.2deg); }
+  50% { transform: translateY(-6px) rotate(1.2deg); }
+}
+@keyframes tea-mascot-evil {
+  0%, 100% { transform: translateY(0) rotate(1.5deg) scale(1); }
+  40% { transform: translateY(-4px) rotate(-2deg) scale(1.02); }
+  70% { transform: translateY(2px) rotate(2deg) scale(1); }
+}
+@keyframes tea-mood-float {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  50% { transform: translateY(-3px) rotate(-3deg); }
+}
+@keyframes tea-mood-sway {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  25% { transform: translateY(-2px) rotate(4deg); }
+  75% { transform: translateY(2px) rotate(-4deg); }
+}
+@keyframes tea-halo-shine {
+  0%, 100% { opacity: 0.85; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-1px); }
+}
+.tea-mascot-bob { animation: tea-mascot-bob 3600ms ease-in-out infinite; transform-origin: 50% 70%; }
+.tea-mascot-evil { animation: tea-mascot-evil 2400ms ease-in-out infinite; transform-origin: 50% 70%; }
+.tea-mood-float { animation: tea-mood-float 3200ms ease-in-out infinite; }
+.tea-mood-sway { animation: tea-mood-sway 2200ms ease-in-out infinite; }
+.tea-halo { animation: tea-halo-shine 2800ms ease-in-out infinite; transform-origin: center; }
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .tea-fade-in,
@@ -242,7 +271,12 @@ h1, h2, h3 {
   .tea-lines > *,
   .tea-toast,
   .tea-shimmer,
-  .tea-emphasis {
+  .tea-emphasis,
+  .tea-mascot-bob,
+  .tea-mascot-evil,
+  .tea-mood-float,
+  .tea-mood-sway,
+  .tea-halo {
     animation: none !important;
   }
   .tea-collapse { transition: none; }
