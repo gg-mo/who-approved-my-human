@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { TypeFigure } from '@/components/figures/TypeFigure';
 import { LandingEntryCards } from '@/components/landing/LandingEntryCards';
@@ -9,7 +9,6 @@ import { SocialProofPreview } from '@/components/landing/SocialProofPreview';
 
 export default function Home() {
   const [showEntryCards, setShowEntryCards] = useState(false);
-  const entrySectionRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -24,21 +23,13 @@ export default function Home() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         eventName: 'landing_view',
-        eventPayload: {
-          referralCode: ref ?? null,
-        },
+        eventPayload: { referralCode: ref ?? null },
       }),
     }).catch(() => undefined);
   }, []);
 
   function handleStartClick() {
     setShowEntryCards(true);
-    window.setTimeout(() => {
-      entrySectionRef.current?.scrollIntoView?.({
-        behavior: 'smooth',
-        block: 'start',
-      });
-    }, 120);
   }
 
   return (
@@ -53,7 +44,7 @@ export default function Home() {
 
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col justify-center px-6 py-16 sm:px-10">
         <div className="grid items-center gap-8 lg:grid-cols-[1.2fr_0.8fr]">
-          <section>
+          <section className="tea-rise-in">
             <p className="w-fit rounded-full border border-cyan-300/40 bg-cyan-300/10 px-4 py-1 text-sm font-medium text-cyan-200">
               Agent Tea
             </p>
@@ -63,33 +54,35 @@ export default function Home() {
             </h1>
 
             <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-200/90">
-              Find out how your AI reads your style in under two minutes. Pick your entry point,
-              paste one instruction, then bring the answers back for your type reveal.
+              Find out how your AI reads your style in under two minutes. Pick where you chat with it, and
+              we&apos;ll walk you through the rest.
             </p>
 
             <button
               type="button"
               onClick={handleStartClick}
-              className="mt-8 inline-flex rounded-2xl bg-cyan-200 px-5 py-3 text-base font-bold text-slate-900 transition hover:bg-cyan-100"
+              aria-expanded={showEntryCards}
+              aria-controls="entry-section"
+              className="tea-press mt-8 inline-flex rounded-2xl bg-cyan-200 px-5 py-3 text-base font-bold text-slate-900 shadow-[0_12px_30px_-12px_rgba(34,211,238,0.6)] hover:bg-cyan-100"
             >
               See what your AI thinks of you
             </button>
           </section>
 
-          <div className="mx-auto grid w-full max-w-xs gap-3 rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur">
+          <div
+            className="tea-scale-in mx-auto grid w-full max-w-xs gap-3 rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur"
+            style={{ animationDelay: '120ms' }}
+          >
             <LobsterMascot variant="hero" className="w-full drop-shadow-[0_24px_30px_rgba(255,90,100,0.32)]" />
             <TypeFigure typeCode="CKVG" className="mx-auto w-32 rounded-2xl border border-white/10 bg-slate-900/50 p-2" />
           </div>
         </div>
 
-        <div
-          ref={entrySectionRef}
-          className={`mt-10 transition-all duration-700 ${
-            showEntryCards ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-4 opacity-0'
-          }`}
-        >
-          {showEntryCards ? <LandingEntryCards /> : null}
-        </div>
+        {showEntryCards ? (
+          <div id="entry-section" className="tea-rise-in mt-10">
+            <LandingEntryCards />
+          </div>
+        ) : null}
 
         <SocialProofPreview />
       </div>

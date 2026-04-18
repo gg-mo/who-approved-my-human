@@ -1,14 +1,22 @@
 import { randomUUID } from 'node:crypto';
 
+import { z } from 'zod';
+
 import { parseEncodedAnswers } from '@/lib/ingestion/encoded-parser';
 import type { SessionAnswer } from '@/lib/scoring/types';
 import { scoreSession } from '@/lib/scoring/score-session';
 import type {
-  DimensionBreakdown,
   DimensionId,
   ScoreSessionResult,
   StrongestSignal,
 } from '@/lib/scoring/types';
+import {
+  DIMENSION_IDS,
+  LIKERT_SCALE,
+  MAX_REASONING_SNIPPETS,
+  MAX_EVIDENCE_ITEMS,
+  MIN_SAMPLE_FOR_SOCIAL_PROOF,
+} from '@/lib/scoring/constants';
 import { constrainedShuffleQuestions } from '@/lib/questions/constrained-shuffle';
 import { getSessionStore } from '@/lib/server/session-store';
 import type {
@@ -104,10 +112,10 @@ function buildEvidence(params: {
 
   const strongestSupport = [...supportRows]
     .sort((a, b) => b.supportScore - a.supportScore)
-    .slice(0, 5);
+    .slice(0, MAX_EVIDENCE_ITEMS);
   const strongestContradictions = [...supportRows]
     .sort((a, b) => b.contradictionScore - a.contradictionScore)
-    .slice(0, 5);
+    .slice(0, MAX_EVIDENCE_ITEMS);
 
   return {
     strongestSupport,
@@ -115,112 +123,46 @@ function buildEvidence(params: {
   };
 }
 
-const DIMENSION_IDS: DimensionId[] = ['clarity', 'tone', 'thinking_style', 'autonomy'];
+const dimensionIdSchema = z.enum(['clarity', 'tone', 'thinking_style', 'autonomy']);
 
-function isObjectRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
-}
+const dimensionBreakdownEntrySchema = z.object({
+  dimension: dimensionIdSchema.optional(),
+  dominantLetter: z.string(),
+  positiveLetter: z.string(),
+  negativeLetter: z.string(),
+  positivePercent: z.number().finite(),
+  negativePercent: z.number().finite(),
+  positiveScore: z.number().finite().optional(),
+  negativeScore: z.number().finite().optional(),
+  tie: z.boolean().optional(),
+});
 
-function toNumber(value: unknown): number | null {
-  return typeof value === 'number' && Number.isFinite(value) ? value : null;
-}
+const dimensionBreakdownSchema = z.object({
+  clarity: dimensionBreakdownEntrySchema,
+  tone: dimensionBreakdownEntrySchema,
+  thinking_style: dimensionBreakdownEntrySchema,
+  autonomy: dimensionBreakdownEntrySchema,
+});
 
-function parseDimensionBreakdown(
-  raw: Record<string, unknown>,
-): ScoreSessionResult['dimensionBreakdown'] | null {
-  const parsed = {} as ScoreSessionResult['dimensionBreakdown'];
+const strongestSignalsSchema = z
+  .array(
+    z.object({
+      dimension: dimensionIdSchema,
+      dominantLetter: z.string(),
+      confidenceDelta: z.number().finite(),
+      dominantPercent: z.number().finite(),
+    }),
+  )
+  .default([]);
 
-  for (const dimensionId of DIMENSION_IDS) {
-    const entry = raw[dimensionId];
-
-    if (!isObjectRecord(entry)) {
-      return null;
-    }
-
-    const positivePercent = toNumber(entry.positivePercent);
-    const negativePercent = toNumber(entry.negativePercent);
-    const dominantLetter = entry.dominantLetter;
-    const positiveLetter = entry.positiveLetter;
-    const negativeLetter = entry.negativeLetter;
-
-    if (
-      positivePercent === null ||
-      negativePercent === null ||
-      typeof dominantLetter !== 'string' ||
-      typeof positiveLetter !== 'string' ||
-      typeof negativeLetter !== 'string'
-    ) {
-      return null;
-    }
-
-    parsed[dimensionId] = {
-      dimension: dimensionId,
-      dominantLetter,
-      positiveLetter,
-      negativeLetter,
-      positivePercent,
-      negativePercent,
-      positiveScore: toNumber(entry.positiveScore) ?? 0,
-      negativeScore: toNumber(entry.negativeScore) ?? 0,
-      tie: Boolean(entry.tie),
-    } satisfies DimensionBreakdown;
-  }
-
-  return parsed;
-}
-
-function parseStrongestSignals(raw: unknown): StrongestSignal[] {
-  if (!Array.isArray(raw)) {
-    return [];
-  }
-
-  return raw.flatMap((item) => {
-    if (!isObjectRecord(item)) {
-      return [];
-    }
-
-    const dimension = item.dimension;
-    const dominantLetter = item.dominantLetter;
-    const confidenceDelta = toNumber(item.confidenceDelta);
-    const dominantPercent = toNumber(item.dominantPercent);
-
-    if (
-      !DIMENSION_IDS.includes(dimension as DimensionId) ||
-      typeof dominantLetter !== 'string' ||
-      confidenceDelta === null ||
-      dominantPercent === null
-    ) {
-      return [];
-    }
-
-    return [
-      {
-        dimension: dimension as DimensionId,
-        dominantLetter,
-        confidenceDelta,
-        dominantPercent,
-      } satisfies StrongestSignal,
-    ];
-  });
-}
-
-function parseTieFlags(raw: unknown): ScoreSessionResult['tieFlags'] {
-  if (!isObjectRecord(raw)) {
-    return {
-      clarity: false,
-      tone: false,
-      thinking_style: false,
-      autonomy: false,
-    };
-  }
-
-  return {
-    clarity: Boolean(raw.clarity),
-    tone: Boolean(raw.tone),
-    thinking_style: Boolean(raw.thinking_style),
-    autonomy: Boolean(raw.autonomy),
-  };
-}
+const tieFlagsSchema = z
+  .object({
+    clarity: z.boolean().optional(),
+    tone: z.boolean().optional(),
+    thinking_style: z.boolean().optional(),
+    autonomy: z.boolean().optional(),
+  })
+  .default({});
 
 type NormalizedPersistedResult = {
   typeCode: string;
@@ -235,21 +177,42 @@ function normalizePersistedResult(result: PersistedResult): NormalizedPersistedR
     return null;
   }
 
-  if (!isObjectRecord(result.dimensionBreakdown)) {
+  const breakdownParse = dimensionBreakdownSchema.safeParse(result.dimensionBreakdown);
+  if (!breakdownParse.success) {
     return null;
   }
 
-  const parsedBreakdown = parseDimensionBreakdown(result.dimensionBreakdown);
+  const signalsParse = strongestSignalsSchema.safeParse(result.strongestSignals);
+  const tiesParse = tieFlagsSchema.safeParse(result.tieFlags);
 
-  if (!parsedBreakdown) {
-    return null;
+  const dimensionBreakdown = {} as ScoreSessionResult['dimensionBreakdown'];
+  for (const dimensionId of DIMENSION_IDS) {
+    const entry = breakdownParse.data[dimensionId];
+    dimensionBreakdown[dimensionId] = {
+      dimension: dimensionId,
+      dominantLetter: entry.dominantLetter,
+      positiveLetter: entry.positiveLetter,
+      negativeLetter: entry.negativeLetter,
+      positivePercent: entry.positivePercent,
+      negativePercent: entry.negativePercent,
+      positiveScore: entry.positiveScore ?? 0,
+      negativeScore: entry.negativeScore ?? 0,
+      tie: entry.tie ?? false,
+    };
   }
+
+  const tieData = tiesParse.success ? tiesParse.data : {};
 
   return {
     typeCode: result.typeCode,
-    dimensionBreakdown: parsedBreakdown,
-    strongestSignals: parseStrongestSignals(result.strongestSignals),
-    tieFlags: parseTieFlags(result.tieFlags),
+    dimensionBreakdown,
+    strongestSignals: signalsParse.success ? signalsParse.data : [],
+    tieFlags: {
+      clarity: tieData.clarity ?? false,
+      tone: tieData.tone ?? false,
+      thinking_style: tieData.thinking_style ?? false,
+      autonomy: tieData.autonomy ?? false,
+    },
     scoreSummary: result.scoreSummary,
   };
 }
@@ -321,8 +284,14 @@ async function upsertNormalizedAnswers(
       throw new Error(`Unknown question code: ${answer.questionCode}`);
     }
 
-    if (!Number.isInteger(answer.value) || answer.value < 1 || answer.value > 5) {
-      throw new Error(`Invalid answer value for ${answer.questionCode}. Expected integer 1-5.`);
+    if (
+      !Number.isInteger(answer.value) ||
+      answer.value < LIKERT_SCALE.MIN ||
+      answer.value > LIKERT_SCALE.MAX
+    ) {
+      throw new Error(
+        `Invalid answer value for ${answer.questionCode}. Expected integer ${LIKERT_SCALE.MIN}-${LIKERT_SCALE.MAX}.`,
+      );
     }
 
     return {
@@ -486,7 +455,7 @@ export async function getSessionResultById(sessionId: string) {
     .sort((a, b) => a.displayOrder - b.displayOrder);
   const reasoningSnippets = answers
     .filter((answer) => Boolean(answer.reasoning))
-    .slice(0, 5)
+    .slice(0, MAX_REASONING_SNIPPETS)
     .map((answer) => ({
       questionCode: answer.questionCode,
       reasoning: answer.reasoning,
@@ -509,7 +478,7 @@ export async function getTypeDistributionSummary(days = 7) {
   const store = getSessionStore();
   const rows = await store.getTypeDistribution(days);
   const sampleCount = rows.reduce((sum, row) => sum + row.count, 0);
-  const minimumSample = 24;
+  const minimumSample = MIN_SAMPLE_FOR_SOCIAL_PROOF;
 
   if (sampleCount < minimumSample) {
     return {
@@ -573,38 +542,86 @@ export async function getCompareSetResults(compareSetId: string) {
     return null;
   }
 
-  const sessionsWithResults = await Promise.all(
+  // Fan out all per-session fetches (session row + stored result) in parallel,
+  // then load each unique question set once — avoiding per-item round trips.
+  const perItem = await Promise.all(
     compareSet.items.map(async (item) => {
-      const result = await getSessionResultById(item.sessionId);
-      const session = await store.getSession(item.sessionId);
-      return {
-        sessionId: item.sessionId,
-        label: item.label,
-        intakeMode: session?.intakeMode,
-        createdAt: session?.createdAt,
-        result,
-      };
+      const [session, result] = await Promise.all([
+        store.getSession(item.sessionId),
+        store.getResult(item.sessionId),
+      ]);
+      return { item, session, result };
     }),
   );
-  const filtered = sessionsWithResults.flatMap((item) => {
-    if (!item.result) {
+
+  const questionSetIds = Array.from(
+    new Set(
+      perItem
+        .map(({ session }) => session?.questionSetId)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  );
+  const questionSets = await Promise.all(
+    questionSetIds.map(async (id) => [id, await store.getQuestions(id)] as const),
+  );
+  const questionsBySetId = new Map(questionSets);
+
+  const answersPerItem = await Promise.all(
+    perItem.map(({ item }) => store.getAnswers(item.sessionId)),
+  );
+
+  const sessions = perItem.flatMap(({ item, session, result }, index) => {
+    if (!session || !result) {
       return [];
     }
+
+    const normalized = normalizePersistedResult(result);
+    if (!normalized) {
+      return [];
+    }
+
+    const questions = questionsBySetId.get(session.questionSetId) ?? [];
+    const questionsByCode = new Map(questions.map((question) => [question.code, question]));
+    const answers = answersPerItem[index];
+
+    const replayAnswers = answers
+      .map((answer) => {
+        const question = questionsByCode.get(answer.questionCode);
+        return {
+          questionCode: answer.questionCode,
+          questionText: question?.text ?? answer.questionCode,
+          selectedValue: answer.rawValue,
+          questionKind: question?.questionKind ?? 'core',
+          displayOrder: question?.displayOrder ?? Number.MAX_SAFE_INTEGER,
+          reasoning: answer.reasoning,
+        };
+      })
+      .sort((a, b) => a.displayOrder - b.displayOrder);
+
+    const evidence = buildEvidence({
+      questions,
+      answers,
+      dimensionBreakdown: normalized.dimensionBreakdown,
+    });
 
     return [
       {
         sessionId: item.sessionId,
         label: item.label,
-        intakeMode: item.intakeMode,
-        createdAt: item.createdAt,
-        result: item.result,
+        intakeMode: session.intakeMode,
+        createdAt: session.createdAt,
+        result: {
+          ...normalized,
+          replayAnswers,
+          evidence,
+        },
       },
     ];
   });
 
   return {
     compareSet,
-    sessions: filtered,
+    sessions,
   };
 }
 

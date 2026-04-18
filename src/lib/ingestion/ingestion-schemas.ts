@@ -1,8 +1,10 @@
 import { z } from 'zod';
 
+import { LIKERT_SCALE } from '@/lib/scoring/constants';
+
 export const answerSchema = z.object({
   questionCode: z.string().regex(/^Q\d{2}$/),
-  value: z.number().int().min(1).max(5),
+  value: z.number().int().min(LIKERT_SCALE.MIN).max(LIKERT_SCALE.MAX),
   reasoning: z.string().max(280).optional(),
 });
 

@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { LobsterMascot } from '@/components/landing/LobsterMascot';
 
 type Mode = 'coding' | 'chatbot';
 
 type DecodeState = {
-  status: 'idle' | 'success' | 'error';
+  status: 'idle' | 'working' | 'success' | 'error';
   message?: string;
   hints?: Array<{ token: string; message: string; suggestedFix: string }>;
   sessionId?: string;
@@ -21,46 +21,18 @@ function getReferralContext() {
   const referralCode = localStorage.getItem('agentTeaReferral') ?? undefined;
   const referrerSessionId = referralCode && /^[0-9a-f-]{36}$/i.test(referralCode) ? referralCode : undefined;
 
-  return {
-    referralCode,
-    referrerSessionId,
-  };
+  return { referralCode, referrerSessionId };
 }
 
 export function LandingEntryCards() {
   const [selectedMode, setSelectedMode] = useState<Mode | null>(null);
-  const [cardsReady, setCardsReady] = useState(false);
-  const [showChatbotBot, setShowChatbotBot] = useState(false);
+  const [showChatbotPanel, setShowChatbotPanel] = useState(false);
   const [copiedKey, setCopiedKey] = useState<Mode | null>(null);
   const [encodedPayload, setEncodedPayload] = useState('');
   const [decodeState, setDecodeState] = useState<DecodeState>({ status: 'idle' });
   const [codingSessionId, setCodingSessionId] = useState<string | null>(null);
   const [codingFlowState, setCodingFlowState] = useState<CodingFlowState>('idle');
   const [codingFlowMessage, setCodingFlowMessage] = useState<string | null>(null);
-  const chatbotBotRef = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setCardsReady(true);
-    }, 60);
-
-    return () => window.clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    if (!showChatbotBot) {
-      return;
-    }
-
-    const timer = window.setTimeout(() => {
-      chatbotBotRef.current?.scrollIntoView?.({
-        behavior: 'smooth',
-        block: 'center',
-      });
-    }, 140);
-
-    return () => window.clearTimeout(timer);
-  }, [showChatbotBot]);
 
   useEffect(() => {
     if (!codingSessionId || selectedMode !== 'coding') {
@@ -72,9 +44,7 @@ export function LandingEntryCards() {
 
     const poll = async () => {
       try {
-        const response = await fetch(`/api/sessions/${codingSessionId}/result`, {
-          cache: 'no-store',
-        });
+        const response = await fetch(`/api/sessions/${codingSessionId}/result`, { cache: 'no-store' });
 
         if (response.ok) {
           if (!cancelled) {
@@ -84,11 +54,11 @@ export function LandingEntryCards() {
         }
 
         if (response.status !== 404 && !cancelled) {
-          setCodingFlowMessage('Session found, still processing. We will refresh automatically.');
+          setCodingFlowMessage('Almost there — your reveal will open as soon as it arrives.');
         }
       } catch {
         if (!cancelled) {
-          setCodingFlowMessage('Waiting for submission… if your agent already posted, this will update soon.');
+          setCodingFlowMessage('Still waiting on your agent. We&apos;ll refresh the moment it replies.');
         }
       }
 
@@ -108,30 +78,21 @@ export function LandingEntryCards() {
   }, [codingSessionId, selectedMode]);
 
   const copyLabel = useMemo(() => {
-    if (!copiedKey) {
-      return null;
-    }
-
-    if (copiedKey === 'coding') {
-      return 'Copied coding instruction with a live session ID.';
-    }
-
-    return 'Copied chatbot instruction';
+    if (!copiedKey) return null;
+    if (copiedKey === 'coding') return 'Copied — paste this into your coding agent.';
+    return 'Copied — paste this into your chatbot.';
   }, [copiedKey]);
 
   async function copyText(key: Mode, value: string) {
     if (navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(value);
     }
-
     setCopiedKey(key);
-    setTimeout(() => setCopiedKey(null), 1700);
+    window.setTimeout(() => setCopiedKey(null), 1800);
   }
 
   async function ensureCodingSession() {
-    if (codingSessionId) {
-      return codingSessionId;
-    }
+    if (codingSessionId) return codingSessionId;
 
     const referral = getReferralContext();
     const sessionResponse = await fetch('/api/sessions', {
@@ -146,7 +107,7 @@ export function LandingEntryCards() {
     const sessionData = await sessionResponse.json();
 
     if (!sessionResponse.ok || !sessionData.sessionId) {
-      throw new Error(sessionData.error ?? 'Failed to create coding-agent session.');
+      throw new Error(sessionData.error ?? 'Could not start a new round. Please try again.');
     }
 
     setCodingSessionId(sessionData.sessionId);
@@ -173,39 +134,35 @@ export function LandingEntryCards() {
   async function copyCodingInstruction() {
     try {
       setCodingFlowState('creating');
-      setCodingFlowMessage('Creating your unique coding-agent session…');
+      setCodingFlowMessage('Preparing your private round…');
 
       const sessionId = await ensureCodingSession();
       await copyText('coding', buildCodingInstruction(sessionId));
 
       setCodingFlowState('waiting');
-      setCodingFlowMessage('Instruction copied. Waiting for your coding agent to submit answers via HTTP.');
+      setCodingFlowMessage('Copied. Paste it to your coding agent — your reveal opens automatically.');
     } catch (error) {
       setCodingFlowState('error');
       setCodingFlowMessage(
-        error instanceof Error ? error.message : 'Could not create coding session. Please try again.',
+        error instanceof Error ? error.message : 'Something went wrong. Please try again.',
       );
     }
   }
 
   async function checkCodingSubmissionNow() {
-    if (!codingSessionId) {
-      return;
-    }
+    if (!codingSessionId) return;
 
     try {
-      const response = await fetch(`/api/sessions/${codingSessionId}/result`, {
-        cache: 'no-store',
-      });
+      const response = await fetch(`/api/sessions/${codingSessionId}/result`, { cache: 'no-store' });
 
       if (response.ok) {
         window.location.assign(`/results/${codingSessionId}`);
         return;
       }
 
-      setCodingFlowMessage('No submission yet. Ask your coding agent to run the cURL step in the prompt.');
+      setCodingFlowMessage('No reply yet. Ask your agent to run the pasted instruction.');
     } catch {
-      setCodingFlowMessage('Could not check submission right now. Please retry in a moment.');
+      setCodingFlowMessage('Could not check just now. Try again in a moment.');
     }
   }
 
@@ -215,17 +172,12 @@ export function LandingEntryCards() {
     if (!payload) {
       setDecodeState({
         status: 'error',
-        message: 'Paste an encoded answer first.',
-        hints: [
-          {
-            token: 'PAYLOAD',
-            message: 'No encoded payload found.',
-            suggestedFix: 'Paste a line that starts with AT1|Q01-... before decoding.',
-          },
-        ],
+        message: 'Paste the reply from your chatbot first.',
       });
       return;
     }
+
+    setDecodeState({ status: 'working', message: 'Decoding your reply…' });
 
     try {
       const referral = getReferralContext();
@@ -242,7 +194,7 @@ export function LandingEntryCards() {
       const sessionData = await sessionResponse.json();
 
       if (!sessionResponse.ok || !sessionData.sessionId) {
-        throw new Error(sessionData.error ?? 'Failed to create chatbot session.');
+        throw new Error(sessionData.error ?? 'Could not start a new round. Please try again.');
       }
 
       const ingestResponse = await fetch(`/api/sessions/${sessionData.sessionId}/ingest-encoded`, {
@@ -270,7 +222,7 @@ export function LandingEntryCards() {
         setDecodeState({
           status: 'error',
           sessionId: sessionData.sessionId,
-          message: 'The encoded line needs a quick fix.',
+          message: 'That reply needs a small fix. See tips below.',
           hints: (ingestData.hints ?? []).map((hint: Record<string, string>) => ({
             token: hint.token,
             message: hint.message,
@@ -283,26 +235,21 @@ export function LandingEntryCards() {
       setDecodeState({
         status: 'success',
         sessionId: sessionData.sessionId,
-        message: 'Decoded successfully. Scoring your result...',
+        message: 'Decoded. Opening your reveal…',
       });
 
-      await fetch(`/api/sessions/${sessionData.sessionId}/score`, {
-        method: 'POST',
-      });
+      await fetch(`/api/sessions/${sessionData.sessionId}/score`, { method: 'POST' });
       void fetch('/api/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          eventName: 'chatbot_flow_completed',
-          sessionId: sessionData.sessionId,
-        }),
+        body: JSON.stringify({ eventName: 'chatbot_flow_completed', sessionId: sessionData.sessionId }),
       }).catch(() => undefined);
 
       window.location.assign(`/results/${sessionData.sessionId}`);
     } catch (error) {
       setDecodeState({
         status: 'error',
-        message: error instanceof Error ? error.message : 'Failed to decode chatbot payload.',
+        message: error instanceof Error ? error.message : 'Could not read that reply. Please try again.',
       });
     }
   }
@@ -313,19 +260,18 @@ export function LandingEntryCards() {
         onClick={() => {
           if (selectedMode === 'coding') {
             setSelectedMode(null);
-            setShowChatbotBot(false);
+            setShowChatbotPanel(false);
             return;
           }
-
           setSelectedMode('coding');
-          setShowChatbotBot(false);
+          setShowChatbotPanel(false);
         }}
-        className={`relative overflow-hidden rounded-3xl border border-orange-300/40 bg-orange-400/10 p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_16px_40px_-16px_rgba(255,152,69,0.5)] transition-all duration-500 ${
-          cardsReady ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
-        } ${
-          selectedMode === 'chatbot'
-            ? 'pointer-events-none scale-[0.96] opacity-0 blur-[1px]'
-            : 'cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_20px_44px_-16px_rgba(255,152,69,0.55)]'
+        className={`tea-card relative overflow-hidden rounded-3xl border p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_16px_40px_-16px_rgba(255,152,69,0.45)] ${
+          selectedMode === 'coding'
+            ? 'border-orange-200/70 bg-orange-400/20 shadow-[0_0_0_1px_rgba(255,255,255,0.12),0_28px_56px_-18px_rgba(255,152,69,0.65)]'
+            : selectedMode === 'chatbot'
+              ? 'cursor-pointer border-orange-300/25 bg-orange-400/5 opacity-60'
+              : 'cursor-pointer border-orange-300/40 bg-orange-400/10 hover:border-orange-200/60'
         }`}
       >
         <LobsterMascot
@@ -334,11 +280,11 @@ export function LandingEntryCards() {
         />
         <h2 className="text-xl font-bold text-orange-100">Coding Agents</h2>
         <p className="mt-2 text-sm leading-6 text-orange-50/85">
-          We generate a unique session ID, your coding agent submits JSON via HTTP, then your result appears on Agent
-          Tea.
+          Paste one tiny instruction into your coding agent. It runs the quiz for you and your reveal opens
+          the moment it replies.
         </p>
         <code className="mt-4 block rounded-2xl border border-orange-200/30 bg-black/30 px-3 py-2 text-xs text-orange-50">
-          follow instructions in /instructions/coding-agent.md, then POST to /api/sessions/&lt;sessionId&gt;/ingest-coding-agent
+          follow instructions in /instructions/coding-agent.md
         </code>
         <div className="mt-4 flex flex-wrap gap-2">
           <button
@@ -346,13 +292,13 @@ export function LandingEntryCards() {
             onClick={(event) => {
               event.stopPropagation();
               setSelectedMode('coding');
-              setShowChatbotBot(false);
+              setShowChatbotPanel(false);
               void copyCodingInstruction();
             }}
             disabled={codingFlowState === 'creating'}
-            className="inline-flex rounded-xl bg-orange-200 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-orange-100 disabled:cursor-wait disabled:opacity-75"
+            className="tea-press inline-flex rounded-xl bg-orange-200 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-orange-100 disabled:cursor-wait disabled:opacity-75"
           >
-            {codingFlowState === 'creating' ? 'Preparing session…' : 'Copy coding instruction'}
+            {codingFlowState === 'creating' ? 'Preparing…' : 'Copy coding instruction'}
           </button>
         </div>
       </article>
@@ -361,18 +307,17 @@ export function LandingEntryCards() {
         onClick={() => {
           if (selectedMode === 'chatbot') {
             setSelectedMode(null);
-            setShowChatbotBot(false);
+            setShowChatbotPanel(false);
             return;
           }
-
           setSelectedMode('chatbot');
         }}
-        className={`relative overflow-hidden rounded-3xl border border-cyan-300/45 bg-cyan-400/10 p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_16px_40px_-16px_rgba(22,189,202,0.55)] transition-all duration-500 ${
-          cardsReady ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
-        } ${
-          selectedMode === 'coding'
-            ? 'pointer-events-none scale-[0.96] opacity-0 blur-[1px]'
-            : 'cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_20px_44px_-16px_rgba(22,189,202,0.6)]'
+        className={`tea-card relative overflow-hidden rounded-3xl border p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_16px_40px_-16px_rgba(22,189,202,0.5)] ${
+          selectedMode === 'chatbot'
+            ? 'border-cyan-200/70 bg-cyan-400/20 shadow-[0_0_0_1px_rgba(255,255,255,0.12),0_28px_56px_-18px_rgba(22,189,202,0.65)]'
+            : selectedMode === 'coding'
+              ? 'cursor-pointer border-cyan-300/25 bg-cyan-400/5 opacity-60'
+              : 'cursor-pointer border-cyan-300/45 bg-cyan-400/10 hover:border-cyan-200/65'
         }`}
       >
         <LobsterMascot
@@ -381,7 +326,8 @@ export function LandingEntryCards() {
         />
         <h2 className="text-xl font-bold text-cyan-100">Chatbots</h2>
         <p className="mt-2 text-sm leading-6 text-cyan-50/85">
-          Use the chatbot prompt guide, then paste the encoded response back here to decode instantly.
+          Paste a prompt into ChatGPT, Claude, or Gemini. Bring back its short reply and we&apos;ll unlock your
+          reveal here.
         </p>
         <code className="mt-4 block rounded-2xl border border-cyan-200/30 bg-black/30 px-3 py-2 text-xs text-cyan-50">
           {chatbotInstruction}
@@ -392,10 +338,10 @@ export function LandingEntryCards() {
             onClick={(event) => {
               event.stopPropagation();
               setSelectedMode('chatbot');
-              setShowChatbotBot(true);
+              setShowChatbotPanel(true);
               void copyText('chatbot', chatbotInstruction);
             }}
-            className="inline-flex rounded-xl bg-cyan-200 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-cyan-100"
+            className="tea-press inline-flex rounded-xl bg-cyan-200 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-cyan-100"
           >
             Copy chatbot instruction
           </button>
@@ -403,126 +349,127 @@ export function LandingEntryCards() {
       </article>
 
       {selectedMode === 'coding' ? (
-        <section className="rounded-3xl border border-orange-100/35 bg-orange-200/15 p-5 shadow-[0_18px_54px_-24px_rgba(251,146,60,0.7)] ring-1 ring-orange-100/20 transition-all duration-700 lg:col-span-2">
-          <div className="mb-4 flex items-center gap-3 rounded-2xl border border-orange-100/25 bg-slate-950/45 p-3">
-            <LobsterMascot
-              variant="bubble"
-              className="h-14 w-14 shrink-0 drop-shadow-[0_10px_12px_rgba(251,146,60,0.3)]"
-            />
-            <p className="text-sm text-orange-50/95">
-              Send the copied instruction to your coding agent. It should submit answers by HTTP and I will auto-open
-              your result page.
-            </p>
-          </div>
-
-          <div className="grid gap-3 rounded-2xl border border-orange-100/20 bg-black/20 p-3 text-xs text-orange-50/95 sm:grid-cols-2">
-            <div>
-              <p className="font-semibold text-orange-100">Session ID</p>
-              <p className="mt-1 break-all font-mono">{codingSessionId ?? 'Will generate on copy'}</p>
-            </div>
-            <div>
-              <p className="font-semibold text-orange-100">Submit endpoint</p>
-              <p className="mt-1 break-all font-mono">
-                {codingSessionId
-                  ? `${typeof window !== 'undefined' ? window.location.origin : ''}/api/sessions/${codingSessionId}/ingest-coding-agent`
-                  : '/api/sessions/<sessionId>/ingest-coding-agent'}
+        <div className="tea-rise-in lg:col-span-2">
+          <section className="mt-1 rounded-3xl border border-orange-100/35 bg-orange-200/15 p-5 shadow-[0_18px_54px_-24px_rgba(251,146,60,0.7)] ring-1 ring-orange-100/20">
+            <div className="mb-4 flex items-center gap-3 rounded-2xl border border-orange-100/25 bg-slate-950/45 p-3">
+              <LobsterMascot
+                variant="bubble"
+                className="h-14 w-14 shrink-0 drop-shadow-[0_10px_12px_rgba(251,146,60,0.3)]"
+              />
+              <p className="text-sm text-orange-50/95">
+                Hand the copied instruction to your coding agent. Your reveal opens the second it replies — you
+                don&apos;t have to come back here to refresh.
               </p>
             </div>
-          </div>
 
-          <div className="mt-4 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                void copyCodingInstruction();
-              }}
-              disabled={codingFlowState === 'creating'}
-              className="inline-flex rounded-xl bg-orange-200 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-orange-100 disabled:cursor-wait disabled:opacity-75"
-            >
-              {codingFlowState === 'creating' ? 'Preparing session…' : 'Copy instruction again'}
-            </button>
-
-            <button
-              type="button"
-              onClick={checkCodingSubmissionNow}
-              disabled={!codingSessionId}
-              className="inline-flex rounded-xl border border-orange-100/45 bg-orange-100/10 px-4 py-2 text-sm font-semibold text-orange-50 transition hover:bg-orange-100/20 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              Check submission now
-            </button>
-
-            {codingSessionId ? (
-              <a
-                href={`/results/${codingSessionId}`}
-                className="inline-flex rounded-xl border border-orange-100/45 bg-orange-100/10 px-4 py-2 text-sm font-semibold text-orange-50 transition hover:bg-orange-100/20"
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => void copyCodingInstruction()}
+                disabled={codingFlowState === 'creating'}
+                className="tea-press inline-flex rounded-xl bg-orange-200 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-orange-100 disabled:cursor-wait disabled:opacity-75"
               >
-                Open result URL
-              </a>
+                {codingFlowState === 'creating' ? 'Preparing…' : 'Copy instruction again'}
+              </button>
+
+              <button
+                type="button"
+                onClick={checkCodingSubmissionNow}
+                disabled={!codingSessionId}
+                className="tea-press inline-flex rounded-xl border border-orange-100/45 bg-orange-100/10 px-4 py-2 text-sm font-semibold text-orange-50 hover:bg-orange-100/20 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                I already pasted it
+              </button>
+
+              {codingSessionId ? (
+                <a
+                  href={`/results/${codingSessionId}`}
+                  className="tea-press inline-flex rounded-xl border border-orange-100/45 bg-orange-100/10 px-4 py-2 text-sm font-semibold text-orange-50 hover:bg-orange-100/20"
+                >
+                  Open my reveal
+                </a>
+              ) : null}
+            </div>
+
+            {codingFlowMessage ? (
+              <p className="tea-toast mt-3 text-sm text-orange-50/95">{codingFlowMessage}</p>
             ) : null}
-          </div>
-
-          {codingFlowMessage ? <p className="mt-3 text-sm text-orange-50/95">{codingFlowMessage}</p> : null}
-        </section>
+          </section>
+        </div>
       ) : null}
 
-      {showChatbotBot ? (
-        <section
-          ref={chatbotBotRef}
-          className="rounded-3xl border border-cyan-100/40 bg-cyan-200/15 p-5 shadow-[0_18px_54px_-24px_rgba(45,212,191,0.75)] ring-1 ring-cyan-100/20 transition-all duration-700 lg:col-span-2"
-        >
-          <div className="mb-4 flex items-center gap-3 rounded-2xl border border-cyan-100/25 bg-slate-950/45 p-3">
-            <LobsterMascot
-              variant="bubble"
-              className="h-14 w-14 shrink-0 drop-shadow-[0_10px_12px_rgba(34,211,238,0.3)]"
+      {showChatbotPanel ? (
+        <div className="tea-rise-in lg:col-span-2">
+          <section className="mt-1 rounded-3xl border border-cyan-100/40 bg-cyan-200/15 p-5 shadow-[0_18px_54px_-24px_rgba(45,212,191,0.75)] ring-1 ring-cyan-100/20">
+            <div className="mb-4 flex items-center gap-3 rounded-2xl border border-cyan-100/25 bg-slate-950/45 p-3">
+              <LobsterMascot
+                variant="bubble"
+                className="h-14 w-14 shrink-0 drop-shadow-[0_10px_12px_rgba(34,211,238,0.3)]"
+              />
+              <p className="text-sm text-cyan-50/95">
+                Ready when you are. Paste the short reply your chatbot gave you and we&apos;ll open your reveal.
+              </p>
+            </div>
+
+            <label htmlFor="chatbotEncodedPayload" className="text-sm font-semibold text-cyan-100">
+              Paste chatbot encoded answer
+            </label>
+            <textarea
+              id="chatbotEncodedPayload"
+              value={encodedPayload}
+              onChange={(event) => setEncodedPayload(event.target.value)}
+              placeholder="AT1|Q01-5AQ02-4AQ03-3..."
+              className="mt-2 h-28 w-full rounded-2xl border border-cyan-100/25 bg-slate-950/70 px-3 py-2 text-sm text-cyan-50 outline-none transition focus:border-cyan-200/60"
             />
-            <p className="text-sm text-cyan-50/95">
-              I am ready. Paste the encoded chatbot output and I will decode it for your Agent Tea result.
-            </p>
-          </div>
-
-          <label htmlFor="chatbotEncodedPayload" className="text-sm font-semibold text-cyan-100">
-            Paste chatbot encoded answer
-          </label>
-          <textarea
-            id="chatbotEncodedPayload"
-            value={encodedPayload}
-            onChange={(event) => setEncodedPayload(event.target.value)}
-            placeholder="AT1|Q01-5AQ02-4AQ03-3..."
-            className="mt-2 h-28 w-full rounded-2xl border border-cyan-100/25 bg-slate-950/70 px-3 py-2 text-sm text-cyan-50 outline-none ring-cyan-300/50 focus:ring"
-          />
-          <button
-            type="button"
-            onClick={decodeChatbotPayload}
-            className="mt-3 inline-flex rounded-xl bg-cyan-200 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-cyan-100"
-          >
-            Decode encoded answer
-          </button>
-
-          {decodeState.message ? (
-            <p
-              className={`mt-3 text-sm ${
-                decodeState.status === 'success' ? 'text-emerald-200' : 'text-rose-200'
-              }`}
+            <button
+              type="button"
+              onClick={decodeChatbotPayload}
+              disabled={decodeState.status === 'working'}
+              className="tea-press mt-3 inline-flex rounded-xl bg-cyan-200 px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-cyan-100 disabled:cursor-wait disabled:opacity-75"
             >
-              {decodeState.message}
-            </p>
-          ) : null}
+              {decodeState.status === 'working' ? 'Decoding…' : 'Reveal my type'}
+            </button>
 
-          {decodeState.hints && decodeState.hints.length > 0 ? (
-            <ul className="mt-3 space-y-2 text-xs text-cyan-50/90">
-              {decodeState.hints.map((hint, index) => (
-                <li key={`${hint.token}-${index}`} className="rounded-xl border border-cyan-100/20 bg-black/20 p-2">
-                  <p className="font-semibold">{hint.token}</p>
-                  <p>{hint.message}</p>
-                  <p className="text-cyan-200/90">Fix: {hint.suggestedFix}</p>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </section>
+            {decodeState.message ? (
+              <p
+                className={`tea-toast mt-3 text-sm ${
+                  decodeState.status === 'success'
+                    ? 'text-emerald-200'
+                    : decodeState.status === 'working'
+                      ? 'text-cyan-100'
+                      : 'text-rose-200'
+                }`}
+                role="status"
+                aria-live="polite"
+              >
+                {decodeState.message}
+              </p>
+            ) : null}
+
+            {decodeState.hints && decodeState.hints.length > 0 ? (
+              <ul className="mt-3 space-y-2 text-xs text-cyan-50/90">
+                {decodeState.hints.map((hint, index) => (
+                  <li
+                    key={`${hint.token}-${index}`}
+                    className="tea-rise-in rounded-xl border border-cyan-100/20 bg-black/20 p-2"
+                    style={{ animationDelay: `${index * 80}ms` }}
+                  >
+                    <p className="font-semibold">{hint.token}</p>
+                    <p>{hint.message}</p>
+                    <p className="text-cyan-200/90">Try: {hint.suggestedFix}</p>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </section>
+        </div>
       ) : null}
 
-      {copyLabel ? <p className="text-xs text-cyan-100 lg:col-span-2">{copyLabel}</p> : null}
+      {copyLabel ? (
+        <p className="tea-toast text-xs text-cyan-100 lg:col-span-2" role="status" aria-live="polite">
+          {copyLabel}
+        </p>
+      ) : null}
     </section>
   );
 }

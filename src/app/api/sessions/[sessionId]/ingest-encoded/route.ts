@@ -1,4 +1,5 @@
 import { encodedIngestBodySchema } from '@/lib/ingestion/ingestion-schemas';
+import { assertSessionMutationAllowed, SessionAccessError } from '@/lib/server/authorization';
 import { ingestEncodedPayload, requireSession, trackEvent } from '@/lib/server/session-service';
 import { jsonResponse, safeParseJson } from '@/lib/server/http';
 
@@ -10,6 +11,8 @@ export async function POST(request: Request, context: ParamsContext) {
   try {
     const { sessionId } = await Promise.resolve(context.params);
     const session = await requireSession(sessionId);
+    await assertSessionMutationAllowed(session);
+
     const body = await safeParseJson<unknown>(request);
     const parsed = encodedIngestBodySchema.safeParse(body);
 
@@ -64,6 +67,10 @@ export async function POST(request: Request, context: ParamsContext) {
       source: 'chatbot',
     });
   } catch (error) {
+    if (error instanceof SessionAccessError) {
+      return jsonResponse({ error: error.message }, error.status);
+    }
+
     const message = error instanceof Error ? error.message : 'Failed to ingest encoded payload';
     const status = message === 'Session not found' ? 404 : 500;
 

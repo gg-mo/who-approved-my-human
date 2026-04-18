@@ -20,7 +20,12 @@ export type EncodedParseResult =
       hints: ParseHint[];
     };
 
-const VALUE_RANGE = [1, 2, 3, 4, 5];
+import { LIKERT_SCALE } from '@/lib/scoring/constants';
+
+const VALUE_RANGE = Array.from(
+  { length: LIKERT_SCALE.MAX - LIKERT_SCALE.MIN + 1 },
+  (_, i) => LIKERT_SCALE.MIN + i,
+);
 
 function normalizePayload(raw: string): string {
   return raw.trim().replace(/\s+/g, '').replace(/:+|=+|_+/g, '-').replace(/a/gi, 'A');
