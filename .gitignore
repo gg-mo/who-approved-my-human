@@ -215,3 +215,7 @@ out/
 coverage/
 playwright-report/
 test-results/
+
+# Keep application source tracked even with inherited Python ignore patterns.
+!src/lib/
+!src/lib/**
