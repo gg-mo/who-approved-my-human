@@ -44,8 +44,9 @@ Formula per side:
 ## Randomization Rules
 
 - Shuffle question order per run
-- Never place direct opposite statements back-to-back
+- Never place opposite-polarity statements from the same dimension back-to-back
 - If spicy mode is ON, lightly interleave spicy prompts and score them the same way as core prompts
+- Use constrained shuffle with retry/backtracking so adjacency violations are impossible
 
 ## Output Contract
 

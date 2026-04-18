@@ -306,8 +306,10 @@ Requirements:
 2) For coding-agent instructions, define JSON submission contract and cURL example.
 3) For chatbot instructions, define encoded format and explicit "copy this encoded output back into Agent Tea" step.
 4) Ensure spicy questions are treated as normal scored questions in both instruction files and ingestion.
-5) Build chatbot paste UI with inline parse errors and actionable fixes.
-6) Add server/client validation so malformed payloads never corrupt sessions.
+5) Implement constrained shuffle so opposite-polarity statements in the same dimension are never consecutive.
+6) Add automated tests that fail if any generated question order violates the adjacency rule.
+7) Build chatbot paste UI with inline parse errors and actionable fixes.
+8) Add server/client validation so malformed payloads never corrupt sessions.
 
 Output:
 - Instruction file structure and URLs.

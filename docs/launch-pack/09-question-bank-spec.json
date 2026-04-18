@@ -95,8 +95,11 @@
   },
   "delivery_rules": {
     "question_order": "shuffled_per_run",
-    "anti_pattern": "Do not place direct opposite-pair items consecutively.",
-    "mixing": "If spicy mode is enabled, interleave spicy questions lightly and score them with the same weighting as core questions."
+    "anti_pattern": "Do not place opposite-polarity questions from the same dimension consecutively.",
+    "mixing": "If spicy mode is enabled, interleave spicy questions lightly and score them with the same weighting as core questions.",
+    "shuffle_strategy": "constrained_shuffle_with_retry",
+    "adjacency_rule": "Reject candidate order if question[i].dimension == question[i+1].dimension AND polarity differs (positive vs negative, or lean positive vs negative).",
+    "max_shuffle_attempts": 200
   },
   "core_questions": [
     {
