@@ -3,10 +3,17 @@ import { randomUUID } from 'node:crypto';
 import { parseEncodedAnswers } from '@/lib/ingestion/encoded-parser';
 import type { SessionAnswer } from '@/lib/scoring/types';
 import { scoreSession } from '@/lib/scoring/score-session';
+import type {
+  DimensionBreakdown,
+  DimensionId,
+  ScoreSessionResult,
+  StrongestSignal,
+} from '@/lib/scoring/types';
 import { constrainedShuffleQuestions } from '@/lib/questions/constrained-shuffle';
 import { getSessionStore } from '@/lib/server/session-store';
 import type {
   PersistedAnswer,
+  PersistedResult,
   QuestionRow,
   SessionIntakeMode,
   SessionRow,
@@ -44,6 +51,145 @@ function mapAnswersToScoring(answers: PersistedAnswer[]): SessionAnswer[] {
 
 function toQuestionMap(questions: QuestionRow[]) {
   return new Map(questions.map((question) => [question.code, question]));
+}
+
+const DIMENSION_IDS: DimensionId[] = ['clarity', 'tone', 'thinking_style', 'autonomy'];
+
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function toNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function parseDimensionBreakdown(
+  raw: Record<string, unknown>,
+): ScoreSessionResult['dimensionBreakdown'] | null {
+  const parsed = {} as ScoreSessionResult['dimensionBreakdown'];
+
+  for (const dimensionId of DIMENSION_IDS) {
+    const entry = raw[dimensionId];
+
+    if (!isObjectRecord(entry)) {
+      return null;
+    }
+
+    const positivePercent = toNumber(entry.positivePercent);
+    const negativePercent = toNumber(entry.negativePercent);
+    const dominantLetter = entry.dominantLetter;
+    const positiveLetter = entry.positiveLetter;
+    const negativeLetter = entry.negativeLetter;
+
+    if (
+      positivePercent === null ||
+      negativePercent === null ||
+      typeof dominantLetter !== 'string' ||
+      typeof positiveLetter !== 'string' ||
+      typeof negativeLetter !== 'string'
+    ) {
+      return null;
+    }
+
+    parsed[dimensionId] = {
+      dimension: dimensionId,
+      dominantLetter,
+      positiveLetter,
+      negativeLetter,
+      positivePercent,
+      negativePercent,
+      positiveScore: toNumber(entry.positiveScore) ?? 0,
+      negativeScore: toNumber(entry.negativeScore) ?? 0,
+      tie: Boolean(entry.tie),
+    } satisfies DimensionBreakdown;
+  }
+
+  return parsed;
+}
+
+function parseStrongestSignals(raw: unknown): StrongestSignal[] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+
+  return raw.flatMap((item) => {
+    if (!isObjectRecord(item)) {
+      return [];
+    }
+
+    const dimension = item.dimension;
+    const dominantLetter = item.dominantLetter;
+    const confidenceDelta = toNumber(item.confidenceDelta);
+    const dominantPercent = toNumber(item.dominantPercent);
+
+    if (
+      !DIMENSION_IDS.includes(dimension as DimensionId) ||
+      typeof dominantLetter !== 'string' ||
+      confidenceDelta === null ||
+      dominantPercent === null
+    ) {
+      return [];
+    }
+
+    return [
+      {
+        dimension: dimension as DimensionId,
+        dominantLetter,
+        confidenceDelta,
+        dominantPercent,
+      } satisfies StrongestSignal,
+    ];
+  });
+}
+
+function parseTieFlags(raw: unknown): ScoreSessionResult['tieFlags'] {
+  if (!isObjectRecord(raw)) {
+    return {
+      clarity: false,
+      tone: false,
+      thinking_style: false,
+      autonomy: false,
+    };
+  }
+
+  return {
+    clarity: Boolean(raw.clarity),
+    tone: Boolean(raw.tone),
+    thinking_style: Boolean(raw.thinking_style),
+    autonomy: Boolean(raw.autonomy),
+  };
+}
+
+type NormalizedPersistedResult = {
+  typeCode: string;
+  dimensionBreakdown: ScoreSessionResult['dimensionBreakdown'];
+  strongestSignals: StrongestSignal[];
+  tieFlags: ScoreSessionResult['tieFlags'];
+  scoreSummary?: Record<string, unknown>;
+};
+
+function normalizePersistedResult(result: PersistedResult): NormalizedPersistedResult | null {
+  if (typeof result.typeCode !== 'string') {
+    return null;
+  }
+
+  if (!isObjectRecord(result.dimensionBreakdown)) {
+    return null;
+  }
+
+  const parsedBreakdown = parseDimensionBreakdown(result.dimensionBreakdown);
+
+  if (!parsedBreakdown) {
+    return null;
+  }
+
+  return {
+    typeCode: result.typeCode,
+    dimensionBreakdown: parsedBreakdown,
+    strongestSignals: parseStrongestSignals(result.strongestSignals),
+    tieFlags: parseTieFlags(result.tieFlags),
+    scoreSummary: result.scoreSummary,
+  };
 }
 
 export async function createSession(params: {
@@ -224,7 +370,33 @@ export async function getSessionResultById(sessionId: string) {
     return null;
   }
 
+  const normalizedResult = normalizePersistedResult(result);
+
+  if (!normalizedResult) {
+    return null;
+  }
+
+  const session = await store.getSession(sessionId);
+  if (!session) {
+    return null;
+  }
+
+  const questions = await store.getQuestions(session.questionSetId);
+  const questionsByCode = new Map(questions.map((question) => [question.code, question]));
   const answers = await store.getAnswers(sessionId);
+  const replayAnswers = answers
+    .map((answer) => {
+      const question = questionsByCode.get(answer.questionCode);
+      return {
+        questionCode: answer.questionCode,
+        questionText: question?.text ?? answer.questionCode,
+        selectedValue: answer.rawValue,
+        questionKind: question?.questionKind ?? 'core',
+        displayOrder: question?.displayOrder ?? Number.MAX_SAFE_INTEGER,
+        reasoning: answer.reasoning,
+      };
+    })
+    .sort((a, b) => a.displayOrder - b.displayOrder);
   const reasoningSnippets = answers
     .filter((answer) => Boolean(answer.reasoning))
     .slice(0, 5)
@@ -234,7 +406,8 @@ export async function getSessionResultById(sessionId: string) {
     }));
 
   return {
-    ...result,
+    ...normalizedResult,
+    replayAnswers,
     reasoningSnippets,
   };
 }
