@@ -26,7 +26,7 @@ export function MoodToggle({ mode, onChange }: MoodToggleProps) {
       <div className="pointer-events-none flex-1">
         <LobsterMascot
           variant="hero"
-          className={`mx-auto w-40 select-none ${isIntrusive ? 'tea-mascot-evil' : 'tea-mascot-bob'} drop-shadow-[0_20px_30px_rgba(255,98,74,0.3)]`}
+          className={`mx-auto w-64 select-none sm:w-72 ${isIntrusive ? 'tea-mascot-evil' : 'tea-mascot-bob'} drop-shadow-[0_28px_40px_rgba(255,98,74,0.35)]`}
         />
       </div>
 
