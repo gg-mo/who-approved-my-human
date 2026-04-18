@@ -17,7 +17,7 @@ This yields exactly **16 type combinations**:
 ## Question Mix (Launch)
 
 - **20 scored core questions** (5 per dimension)
-- **12 optional spicy questions** (flavor-only by default)
+- **12 scored spicy questions** (same scoring weight as core)
 
 Rationale: slightly more depth than ultra-short tests while still fast enough to feel social and repeatable.
 
@@ -45,7 +45,7 @@ Formula per side:
 
 - Shuffle question order per run
 - Never place direct opposite statements back-to-back
-- If spicy mode is ON, lightly interleave spicy prompts without affecting core score integrity
+- If spicy mode is ON, lightly interleave spicy prompts and score them the same way as core prompts
 
 ## Output Contract
 

@@ -198,7 +198,7 @@ Implement AE-5 for Agent Tea.
 Requirements:
 1) Build a pure TypeScript scoring module using 1-5 Likert values.
 2) Apply reverse coding where needed.
-3) Compute per-dimension percentages and dominant letter by C/K/V/G order.
+3) Score core and spicy questions with equal weighting, then compute per-dimension percentages and dominant letter by C/K/V/G order.
 4) Return type_code, dimension_breakdown, strongest_signals, tie_flags.
 5) Add robust unit tests including edge cases (ties, all-neutral, extreme responses).
 
@@ -305,8 +305,9 @@ Requirements:
 1) Create two markdown instruction files (coding-agent and chatbot) with aligned question logic.
 2) For coding-agent instructions, define JSON submission contract and cURL example.
 3) For chatbot instructions, define encoded format and explicit "copy this encoded output back into Agent Tea" step.
-4) Build chatbot paste UI with inline parse errors and actionable fixes.
-5) Add server/client validation so malformed payloads never corrupt sessions.
+4) Ensure spicy questions are treated as normal scored questions in both instruction files and ingestion.
+5) Build chatbot paste UI with inline parse errors and actionable fixes.
+6) Add server/client validation so malformed payloads never corrupt sessions.
 
 Output:
 - Instruction file structure and URLs.

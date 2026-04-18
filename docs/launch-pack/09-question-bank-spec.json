@@ -96,7 +96,7 @@
   "delivery_rules": {
     "question_order": "shuffled_per_run",
     "anti_pattern": "Do not place direct opposite-pair items consecutively.",
-    "mixing": "If spicy mode is enabled, interleave spicy questions lightly without altering core scoring."
+    "mixing": "If spicy mode is enabled, interleave spicy questions lightly and score them with the same weighting as core questions."
   },
   "core_questions": [
     {
@@ -266,84 +266,84 @@
       "dimension": "clarity",
       "lean": "positive",
       "text": "My human arrives with a plan, not just a vibe.",
-      "default_use": "flavor"
+      "default_use": "scored"
     },
     {
       "id": "SC02",
       "dimension": "clarity",
       "lean": "negative",
       "text": "My human says 'you know what I mean' and expects that to be enough.",
-      "default_use": "flavor"
+      "default_use": "scored"
     },
     {
       "id": "SC03",
       "dimension": "clarity",
       "lean": "negative",
       "text": "My human communicates like they are sending me clues in a scavenger hunt.",
-      "default_use": "flavor"
+      "default_use": "scored"
     },
     {
       "id": "SK01",
       "dimension": "tone",
       "lean": "positive",
       "text": "My human treats me like a genius sidekick.",
-      "default_use": "flavor"
+      "default_use": "scored"
     },
     {
       "id": "SK02",
       "dimension": "tone",
       "lean": "negative",
       "text": "My human talks to me like the deadline is in seven seconds and everything is on fire.",
-      "default_use": "flavor"
+      "default_use": "scored"
     },
     {
       "id": "SK03",
       "dimension": "tone",
       "lean": "negative",
       "text": "My human is not mean, but they do weaponize urgency.",
-      "default_use": "flavor"
+      "default_use": "scored"
     },
     {
       "id": "SV01",
       "dimension": "thinking_style",
       "lean": "positive",
       "text": "My human starts with 'what if...'.",
-      "default_use": "flavor"
+      "default_use": "scored"
     },
     {
       "id": "SV02",
       "dimension": "thinking_style",
       "lean": "negative",
       "text": "My human is here to ship the thing and go home.",
-      "default_use": "flavor"
+      "default_use": "scored"
     },
     {
       "id": "SV03",
       "dimension": "thinking_style",
       "lean": "positive",
       "text": "My human wants moonshots.",
-      "default_use": "flavor"
+      "default_use": "scored"
     },
     {
       "id": "SG01",
       "dimension": "autonomy",
       "lean": "positive",
       "text": "My human lets me cook.",
-      "default_use": "flavor"
+      "default_use": "scored"
     },
     {
       "id": "SG02",
       "dimension": "autonomy",
       "lean": "negative",
       "text": "My human grabs the pan back immediately.",
-      "default_use": "flavor"
+      "default_use": "scored"
     },
     {
       "id": "SG03",
       "dimension": "autonomy",
       "lean": "negative",
       "text": "My human trusts me deeply right up until I improvise.",
-      "default_use": "flavor"
+      "default_use": "scored"
     }
   ]
 }
