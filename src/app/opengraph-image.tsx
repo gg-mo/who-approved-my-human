@@ -50,7 +50,6 @@ export default function OGImage() {
           <path d="M48 28 C 62 28, 62 48, 48 48" fill="none" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" />
           <path d="M5 22 Q 32 78 59 22 Z" fill="#ffffff" stroke="#0f172a" strokeWidth="2.5" strokeLinejoin="round" />
           <ellipse cx="32" cy="22" rx="25" ry="4.5" fill="#4ade80" stroke="#0f172a" strokeWidth="2" />
-          <text x="32" y="26" textAnchor="middle" fontFamily="Georgia, serif" fontSize="8" fontWeight="700" fill="#0f172a">T</text>
         </svg>
       </div>
     ),

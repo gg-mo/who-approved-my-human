@@ -23,8 +23,8 @@ describe('Home page', () => {
 
     expect(screen.getByRole('heading', { name: /coding agents/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /chatbots/i })).toBeInTheDocument();
-    expect(screen.getByText(/\/instructions\/coding-agent\.md/i)).toBeInTheDocument();
-    expect(screen.getByText(/your chatbot has notes on you/i)).toBeInTheDocument();
+    expect(screen.getByText(/i have a coding agent\./i)).toBeInTheDocument();
+    expect(screen.getByText(/i use a chatbot\./i)).toBeInTheDocument();
   });
 
   it('renders a clear call to action for first-time users', () => {

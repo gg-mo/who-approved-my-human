@@ -32,7 +32,10 @@ export default function Home() {
   function handleStartClick() {
     setShowEntryCards(true);
     window.setTimeout(() => {
-      entrySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const node = entrySectionRef.current;
+      if (node && typeof node.scrollIntoView === 'function') {
+        node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
     }, 80);
   }
 

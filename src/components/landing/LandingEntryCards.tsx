@@ -99,7 +99,10 @@ export function LandingEntryCards() {
   useEffect(() => {
     if (!showChatbotPanel) return;
     const timer = window.setTimeout(() => {
-      chatbotPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const node = chatbotPanelRef.current;
+      if (node && typeof node.scrollIntoView === 'function') {
+        node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
     }, 120);
     return () => window.clearTimeout(timer);
   }, [showChatbotPanel]);
@@ -345,11 +348,7 @@ export function LandingEntryCards() {
               </button>
             </div>
           </div>
-        ) : (
-          <p className="mt-4 truncate font-mono text-[0.78rem] text-orange-100/60">
-            {codingInstructionUrl}
-          </p>
-        )}
+        ) : null}
       </article>
 
       <article
@@ -401,7 +400,7 @@ export function LandingEntryCards() {
                   void copyChatbotFullPrompt();
                 }}
                 disabled={chatbotCopyState === 'loading'}
-                className="tea-press inline-flex text-[0.78rem] text-cyan-100/80 underline-offset-2 hover:text-cyan-100 hover:underline disabled:cursor-wait disabled:opacity-75"
+                className="tea-press inline-flex items-center rounded-full border border-cyan-200/40 bg-cyan-200/10 px-4 py-2 text-[0.8rem] font-medium text-cyan-100/90 hover:border-cyan-200/60 hover:bg-cyan-200/15 hover:text-cyan-50 disabled:cursor-wait disabled:opacity-75"
               >
                 {chatbotCopyState === 'loading'
                   ? 'Preparing…'
@@ -414,11 +413,7 @@ export function LandingEntryCards() {
               </p>
             ) : null}
           </div>
-        ) : (
-          <p className="mt-4 text-[0.82rem] italic text-cyan-100/70">
-            Your chatbot has notes on you. Let&apos;s hear them.
-          </p>
-        )}
+        ) : null}
       </article>
 
       {selectedMode === 'coding' && codingFlowMessage ? (
