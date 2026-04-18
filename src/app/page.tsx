@@ -1,9 +1,46 @@
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
+
 import { TypeFigure } from '@/components/figures/TypeFigure';
 import { LandingEntryCards } from '@/components/landing/LandingEntryCards';
 import { LobsterMascot } from '@/components/landing/LobsterMascot';
 import { SocialProofPreview } from '@/components/landing/SocialProofPreview';
 
 export default function Home() {
+  const [showEntryCards, setShowEntryCards] = useState(false);
+  const entrySectionRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('ref');
+
+    if (ref) {
+      localStorage.setItem('agentTeaReferral', ref);
+    }
+
+    void fetch('/api/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        eventName: 'landing_view',
+        eventPayload: {
+          referralCode: ref ?? null,
+        },
+      }),
+    }).catch(() => undefined);
+  }, []);
+
+  function handleStartClick() {
+    setShowEntryCards(true);
+    window.setTimeout(() => {
+      entrySectionRef.current?.scrollIntoView?.({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }, 120);
+  }
+
   return (
     <main
       className="relative isolate overflow-hidden text-slate-100"
@@ -32,9 +69,10 @@ export default function Home() {
 
             <button
               type="button"
+              onClick={handleStartClick}
               className="mt-8 inline-flex rounded-2xl bg-cyan-200 px-5 py-3 text-base font-bold text-slate-900 transition hover:bg-cyan-100"
             >
-              Start your Agent Tea test
+              See what your AI thinks of you
             </button>
           </section>
 
@@ -44,8 +82,13 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="mt-10">
-          <LandingEntryCards />
+        <div
+          ref={entrySectionRef}
+          className={`mt-10 transition-all duration-700 ${
+            showEntryCards ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-4 opacity-0'
+          }`}
+        >
+          {showEntryCards ? <LandingEntryCards /> : null}
         </div>
 
         <SocialProofPreview />
