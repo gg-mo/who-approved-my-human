@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
-import { TypeFigure } from '@/components/figures/TypeFigure';
 import { LobsterMascot } from '@/components/landing/LobsterMascot';
+import { MoodToggle } from '@/components/results/MoodToggle';
 import { type NarrativeMode } from '@/lib/results/copy-content';
 import { buildProfileCopy, getDimensionLabels } from '@/lib/results/profile-copy';
 import { buildShareCardHighlights, buildShareCardText } from '@/lib/results/share-card';
@@ -235,56 +235,44 @@ export function ResultsExperience({
     }
   }
 
+  const isIntrusive = mode === 'intrusive';
+
   return (
     <main
-      className="min-h-screen px-6 py-12 text-slate-100 sm:px-10"
+      className={`min-h-screen px-6 py-12 text-slate-100 transition-colors duration-500 sm:px-10 ${
+        isIntrusive ? 'tea-mood-intrusive' : 'tea-mood-normal'
+      }`}
       style={{
-        background:
-          'linear-gradient(145deg, var(--tea-bg-deep) 0%, var(--tea-bg-mid) 45%, var(--tea-bg-glow) 100%)',
+        background: isIntrusive
+          ? 'linear-gradient(145deg, #1a0612 0%, #2b0822 45%, #420f30 100%)'
+          : 'linear-gradient(145deg, var(--tea-bg-deep) 0%, var(--tea-bg-mid) 45%, var(--tea-bg-glow) 100%)',
+        transition: 'background 500ms ease',
       }}
     >
       <div className="mx-auto max-w-6xl">
-        <section className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+        <section className="grid items-center gap-8 lg:grid-cols-[1.2fr_0.8fr]">
           <div className="tea-rise-in">
-            <p className="w-fit rounded-full border border-cyan-200/35 bg-cyan-200/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-cyan-100">
+            <p
+              className={`w-fit rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide transition-colors ${
+                isIntrusive
+                  ? 'border-rose-300/40 bg-rose-400/10 text-rose-100'
+                  : 'border-cyan-200/35 bg-cyan-200/10 text-cyan-100'
+              }`}
+            >
               Agent Tea Result
             </p>
             <h1 className="mt-4 text-5xl font-black tracking-tight sm:text-6xl">{result.typeCode}</h1>
-            <p className="mt-2 text-2xl font-bold text-orange-200">{profileCopy.nickname}</p>
+            <p
+              className={`mt-2 text-2xl font-bold transition-colors ${
+                isIntrusive ? 'text-rose-200' : 'text-orange-200'
+              }`}
+            >
+              {profileCopy.nickname}
+            </p>
             <p className="mt-4 max-w-3xl text-base leading-7 text-slate-300">{profileCopy.oneLiner}</p>
-            <div className="mt-5 inline-flex rounded-full border border-white/20 bg-slate-900/80 p-1 text-sm">
-              <button
-                type="button"
-                onClick={() => setMode('normal')}
-                className={`tea-press rounded-full px-4 py-1.5 ${
-                  mode === 'normal' ? 'bg-cyan-300 text-slate-950 shadow-sm' : 'text-cyan-100 hover:bg-white/10'
-                }`}
-              >
-                Normal
-              </button>
-              <button
-                type="button"
-                onClick={() => setMode('intrusive')}
-                className={`tea-press rounded-full px-4 py-1.5 ${
-                  mode === 'intrusive' ? 'bg-orange-300 text-slate-950 shadow-sm' : 'text-orange-100 hover:bg-white/10'
-                }`}
-              >
-                Intrusive Thoughts
-              </button>
-            </div>
           </div>
-          <div
-            className="tea-scale-in grid gap-3 rounded-3xl border border-white/10 bg-white/5 p-4"
-            style={{ animationDelay: '120ms' }}
-          >
-            <LobsterMascot
-              variant="hero"
-              className="mx-auto w-44 drop-shadow-[0_20px_24px_rgba(255,98,74,0.3)]"
-            />
-            <TypeFigure
-              typeCode={result.typeCode}
-              className="mx-auto w-36 rounded-2xl border border-white/10 bg-slate-900/50 p-2"
-            />
+          <div className="tea-scale-in pb-6 pt-4" style={{ animationDelay: '120ms' }}>
+            <MoodToggle mode={mode} onChange={setMode} />
           </div>
         </section>
 
