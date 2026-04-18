@@ -44,9 +44,10 @@ export default function Home() {
         className="absolute inset-0 -z-10"
         style={{
           background:
-            'radial-gradient(60rem 30rem at 18% 12%, rgba(34,211,238,0.10), transparent 60%),' +
-            'radial-gradient(60rem 30rem at 82% 20%, rgba(251,146,60,0.09), transparent 60%),' +
-            'linear-gradient(160deg, #07080f 0%, #0e1022 48%, #15112a 100%)',
+            'radial-gradient(55rem 32rem at 15% 10%, rgba(34,211,238,0.22), transparent 65%),' +
+            'radial-gradient(60rem 34rem at 85% 18%, rgba(251,146,60,0.18), transparent 65%),' +
+            'radial-gradient(70rem 40rem at 50% 110%, rgba(139,92,246,0.22), transparent 70%),' +
+            'linear-gradient(160deg, #0a1a2c 0%, #17214a 48%, #2a1848 100%)',
         }}
       />
 

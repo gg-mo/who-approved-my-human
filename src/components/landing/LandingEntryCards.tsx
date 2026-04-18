@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { LobsterMascot } from '@/components/landing/LobsterMascot';
 
@@ -35,11 +35,8 @@ export function LandingEntryCards() {
   const [codingSessionId, setCodingSessionId] = useState<string | null>(null);
   const [codingFlowState, setCodingFlowState] = useState<CodingFlowState>('idle');
   const [codingFlowMessage, setCodingFlowMessage] = useState<string | null>(null);
-  const [origin, setOrigin] = useState('');
-
-  useEffect(() => {
-    setOrigin(window.location.origin);
-  }, []);
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const chatbotPanelRef = useRef<HTMLDivElement | null>(null);
 
   const codingInstructionUrl = origin ? `${origin}/instructions/coding-agent.md` : '/instructions/coding-agent.md';
   const chatbotInstructionUrl = origin ? `${origin}/instructions/chatbot.md` : '/instructions/chatbot.md';
@@ -87,6 +84,14 @@ export function LandingEntryCards() {
       }
     };
   }, [codingSessionId, selectedMode]);
+
+  useEffect(() => {
+    if (!showChatbotPanel) return;
+    const timer = window.setTimeout(() => {
+      chatbotPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [showChatbotPanel]);
 
   const copyLabel = useMemo(() => {
     if (!copiedKey) return null;
@@ -272,7 +277,12 @@ export function LandingEntryCards() {
           variant="card"
           className="pointer-events-none absolute -right-6 -top-8 w-24 rotate-6 opacity-20"
         />
-        <h2 className="tea-eyebrow text-orange-200/80">Coding Agents</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="tea-eyebrow text-orange-200/80">Coding Agents</h2>
+          <span className="rounded-full border border-orange-300/30 bg-orange-300/10 px-2 py-0.5 text-[0.62rem] font-medium uppercase tracking-[0.12em] text-orange-100/90">
+            Better experience
+          </span>
+        </div>
         <p className="tea-headline mt-3 text-[1.5rem] text-white">I have a coding agent.</p>
 
         {selectedMode === 'coding' ? (
@@ -381,7 +391,7 @@ export function LandingEntryCards() {
       ) : null}
 
       {showChatbotPanel ? (
-        <div className="tea-rise-in lg:col-span-2">
+        <div ref={chatbotPanelRef} className="tea-rise-in scroll-mt-16 lg:col-span-2">
           <section className="rounded-[28px] border border-white/[0.08] bg-white/[0.03] p-7 backdrop-blur-xl">
             <p className="tea-eyebrow text-cyan-200/80">Paste reply</p>
             <label

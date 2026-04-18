@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
 :root {
-  --tea-bg-deep: #0b1220;
-  --tea-bg-mid: #15182f;
-  --tea-bg-glow: #1f1136;
+  --tea-bg-deep: #0a1a2c;
+  --tea-bg-mid: #17214a;
+  --tea-bg-glow: #2a1848;
   --tea-cyan: #22d3ee;
   --tea-coral: #fb923c;
   --tea-shell: #ff5f7a;
