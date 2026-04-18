@@ -207,13 +207,17 @@ export const supabaseSessionStore: SessionStore = {
 
   async setSessionStatus(sessionId, status) {
     const client = createSupabaseServerClient({ useServiceRole: true });
-    const { error } = await client
-      .from('test_sessions')
-      .update({
-        status,
-        completed_at: status === 'scored' ? new Date().toISOString() : null,
-      })
-      .eq('id', sessionId);
+    const withCompletedAt: Record<string, unknown> = { status };
+    if (status === 'scored') {
+      withCompletedAt.completed_at = new Date().toISOString();
+    }
+
+    let { error } = await client.from('test_sessions').update(withCompletedAt).eq('id', sessionId);
+
+    if (error && /completed_at/i.test(error.message ?? '')) {
+      const retry = await client.from('test_sessions').update({ status }).eq('id', sessionId);
+      error = retry.error;
+    }
 
     if (error) {
       throw error;
