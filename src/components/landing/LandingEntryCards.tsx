@@ -253,11 +253,20 @@ export function LandingEntryCards() {
           }),
         }).catch(() => undefined);
 
+        const rawHints = Array.isArray(ingestData.hints) ? ingestData.hints : [];
+        const fallbackMessage =
+          typeof ingestData.error === 'string' && ingestData.error
+            ? `Server error: ${ingestData.error}`
+            : 'Could not decode that reply. Please try again.';
+
         setDecodeState({
           status: 'error',
           sessionId: sessionData.sessionId,
-          message: 'That reply needs a small fix. See tips below.',
-          hints: (ingestData.hints ?? []).map((hint: Record<string, string>) => ({
+          message:
+            rawHints.length > 0
+              ? 'That reply needs a small fix. See tips below.'
+              : fallbackMessage,
+          hints: rawHints.map((hint: Record<string, string>) => ({
             token: hint.token,
             message: hint.message,
             suggestedFix: hint.suggestedFix,
