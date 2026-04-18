@@ -5,7 +5,6 @@ import { POST as answersPost } from '@/app/api/sessions/[sessionId]/answers/rout
 import { POST as codingAgentPost } from '@/app/api/sessions/[sessionId]/ingest-coding-agent/route';
 import { POST as encodedPost } from '@/app/api/sessions/[sessionId]/ingest-encoded/route';
 import { GET as resultGet } from '@/app/api/sessions/[sessionId]/result/route';
-import { POST as scorePost } from '@/app/api/sessions/[sessionId]/score/route';
 import { resetInMemorySessionStore } from '@/lib/server/session-store/in-memory';
 
 beforeEach(() => {
@@ -81,7 +80,7 @@ describe('phase 1 session API', () => {
     expect(data.hints.length).toBeGreaterThan(0);
   });
 
-  it('scores coding-agent answers and returns result payload with reasoning snippets', async () => {
+  it('auto-scores coding-agent answers and returns result payload with reasoning snippets', async () => {
     const { payload: sessionPayload } = await createSession('coding_agent');
 
     const ingestResponse = await codingAgentPost(
@@ -99,17 +98,11 @@ describe('phase 1 session API', () => {
       }),
       { params: { sessionId: sessionPayload.sessionId } },
     );
+    const ingestData = await ingestResponse.json();
 
     expect(ingestResponse.status).toBe(200);
-
-    const scoreResponse = await scorePost(
-      new Request(`http://localhost/api/sessions/${sessionPayload.sessionId}/score`, {
-        method: 'POST',
-      }),
-      { params: { sessionId: sessionPayload.sessionId } },
-    );
-
-    expect(scoreResponse.status).toBe(200);
+    expect(ingestData.status).toBe('scored');
+    expect(ingestData.result.typeCode).toHaveLength(4);
 
     const resultResponse = await resultGet(
       new Request(`http://localhost/api/sessions/${sessionPayload.sessionId}/result`),

@@ -1,5 +1,10 @@
 import { codingAgentIngestBodySchema } from '@/lib/ingestion/ingestion-schemas';
-import { ingestCodingAgentAnswers, requireSession, trackEvent } from '@/lib/server/session-service';
+import {
+  ingestCodingAgentAnswers,
+  requireSession,
+  scoreSessionById,
+  trackEvent,
+} from '@/lib/server/session-service';
 import { jsonResponse, safeParseJson } from '@/lib/server/http';
 
 type ParamsContext = {
@@ -30,14 +35,19 @@ export async function POST(request: Request, context: ParamsContext) {
       eventPayload: {
         source: 'coding_agent',
         accepted: ingestion.accepted,
+        agentName: parsed.data.agentName ?? null,
       },
     });
+
+    const result = await scoreSessionById(session);
 
     return jsonResponse({
       sessionId,
       accepted: ingestion.accepted,
-      status: 'ingested',
+      status: 'scored',
       source: 'coding_agent',
+      result,
+      resultUrl: `/results/${sessionId}`,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to ingest coding-agent answers';

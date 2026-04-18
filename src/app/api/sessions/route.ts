@@ -1,6 +1,6 @@
 import { createSessionBodySchema } from '@/lib/ingestion/ingestion-schemas';
 import { createSession } from '@/lib/server/session-service';
-import { jsonResponse, safeParseJson } from '@/lib/server/http';
+import { getErrorMessage, jsonResponse, safeParseJson } from '@/lib/server/http';
 
 export async function POST(request: Request) {
   try {
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
   } catch (error) {
     return jsonResponse(
       {
-        error: error instanceof Error ? error.message : 'Failed to create session',
+        error: getErrorMessage(error, 'Failed to create session'),
       },
       500,
     );

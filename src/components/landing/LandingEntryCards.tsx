@@ -13,8 +13,19 @@ type DecodeState = {
   sessionId?: string;
 };
 
-const codingInstruction = 'follow the instruction in this file: /instructions/coding-agent.md';
+type CodingFlowState = 'idle' | 'creating' | 'waiting' | 'error';
+
 const chatbotInstruction = 'follow the instruction in this file: /instructions/chatbot.md';
+
+function getReferralContext() {
+  const referralCode = localStorage.getItem('agentTeaReferral') ?? undefined;
+  const referrerSessionId = referralCode && /^[0-9a-f-]{36}$/i.test(referralCode) ? referralCode : undefined;
+
+  return {
+    referralCode,
+    referrerSessionId,
+  };
+}
 
 export function LandingEntryCards() {
   const [selectedMode, setSelectedMode] = useState<Mode | null>(null);
@@ -23,6 +34,9 @@ export function LandingEntryCards() {
   const [copiedKey, setCopiedKey] = useState<Mode | null>(null);
   const [encodedPayload, setEncodedPayload] = useState('');
   const [decodeState, setDecodeState] = useState<DecodeState>({ status: 'idle' });
+  const [codingSessionId, setCodingSessionId] = useState<string | null>(null);
+  const [codingFlowState, setCodingFlowState] = useState<CodingFlowState>('idle');
+  const [codingFlowMessage, setCodingFlowMessage] = useState<string | null>(null);
   const chatbotBotRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -48,12 +62,61 @@ export function LandingEntryCards() {
     return () => window.clearTimeout(timer);
   }, [showChatbotBot]);
 
+  useEffect(() => {
+    if (!codingSessionId || selectedMode !== 'coding') {
+      return;
+    }
+
+    let cancelled = false;
+    let timer: number | null = null;
+
+    const poll = async () => {
+      try {
+        const response = await fetch(`/api/sessions/${codingSessionId}/result`, {
+          cache: 'no-store',
+        });
+
+        if (response.ok) {
+          if (!cancelled) {
+            window.location.assign(`/results/${codingSessionId}`);
+          }
+          return;
+        }
+
+        if (response.status !== 404 && !cancelled) {
+          setCodingFlowMessage('Session found, still processing. We will refresh automatically.');
+        }
+      } catch {
+        if (!cancelled) {
+          setCodingFlowMessage('Waiting for submission… if your agent already posted, this will update soon.');
+        }
+      }
+
+      if (!cancelled) {
+        timer = window.setTimeout(poll, 2800);
+      }
+    };
+
+    timer = window.setTimeout(poll, 1800);
+
+    return () => {
+      cancelled = true;
+      if (timer !== null) {
+        window.clearTimeout(timer);
+      }
+    };
+  }, [codingSessionId, selectedMode]);
+
   const copyLabel = useMemo(() => {
     if (!copiedKey) {
       return null;
     }
 
-    return copiedKey === 'coding' ? 'Copied coding instruction' : 'Copied chatbot instruction';
+    if (copiedKey === 'coding') {
+      return 'Copied coding instruction with a live session ID.';
+    }
+
+    return 'Copied chatbot instruction';
   }, [copiedKey]);
 
   async function copyText(key: Mode, value: string) {
@@ -62,7 +125,88 @@ export function LandingEntryCards() {
     }
 
     setCopiedKey(key);
-    setTimeout(() => setCopiedKey(null), 1600);
+    setTimeout(() => setCopiedKey(null), 1700);
+  }
+
+  async function ensureCodingSession() {
+    if (codingSessionId) {
+      return codingSessionId;
+    }
+
+    const referral = getReferralContext();
+    const sessionResponse = await fetch('/api/sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        intakeMode: 'coding_agent',
+        referralCode: referral.referralCode,
+        referrerSessionId: referral.referrerSessionId,
+      }),
+    });
+    const sessionData = await sessionResponse.json();
+
+    if (!sessionResponse.ok || !sessionData.sessionId) {
+      throw new Error(sessionData.error ?? 'Failed to create coding-agent session.');
+    }
+
+    setCodingSessionId(sessionData.sessionId);
+    return sessionData.sessionId as string;
+  }
+
+  function buildCodingInstruction(sessionId: string) {
+    const site = window.location.origin;
+    const instructionUrl = `${site}/instructions/coding-agent.md`;
+
+    return [
+      `Follow the instructions in this file: ${instructionUrl}`,
+      '',
+      `Use this exact sessionId: ${sessionId}`,
+      `Use this site value: ${site}`,
+      '',
+      'After generating the JSON, send it directly with this cURL request:',
+      `curl -X POST "${site}/api/sessions/${sessionId}/ingest-coding-agent" \\\n  -H "Content-Type: application/json" \\\n  --data '<json-from-above>'`,
+      '',
+      'Do not ask me to submit manually. Submit it yourself and then tell me it was sent.',
+    ].join('\n');
+  }
+
+  async function copyCodingInstruction() {
+    try {
+      setCodingFlowState('creating');
+      setCodingFlowMessage('Creating your unique coding-agent session…');
+
+      const sessionId = await ensureCodingSession();
+      await copyText('coding', buildCodingInstruction(sessionId));
+
+      setCodingFlowState('waiting');
+      setCodingFlowMessage('Instruction copied. Waiting for your coding agent to submit answers via HTTP.');
+    } catch (error) {
+      setCodingFlowState('error');
+      setCodingFlowMessage(
+        error instanceof Error ? error.message : 'Could not create coding session. Please try again.',
+      );
+    }
+  }
+
+  async function checkCodingSubmissionNow() {
+    if (!codingSessionId) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/sessions/${codingSessionId}/result`, {
+        cache: 'no-store',
+      });
+
+      if (response.ok) {
+        window.location.assign(`/results/${codingSessionId}`);
+        return;
+      }
+
+      setCodingFlowMessage('No submission yet. Ask your coding agent to run the cURL step in the prompt.');
+    } catch {
+      setCodingFlowMessage('Could not check submission right now. Please retry in a moment.');
+    }
   }
 
   async function decodeChatbotPayload() {
@@ -84,16 +228,15 @@ export function LandingEntryCards() {
     }
 
     try {
-      const referralCode = localStorage.getItem('agentTeaReferral') ?? undefined;
-      const referralUuid = referralCode && /^[0-9a-f-]{36}$/i.test(referralCode) ? referralCode : undefined;
+      const referral = getReferralContext();
 
       const sessionResponse = await fetch('/api/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           intakeMode: 'chatbot',
-          referralCode,
-          referrerSessionId: referralUuid,
+          referralCode: referral.referralCode,
+          referrerSessionId: referral.referrerSessionId,
         }),
       });
       const sessionData = await sessionResponse.json();
@@ -168,6 +311,12 @@ export function LandingEntryCards() {
     <section className="grid gap-4 lg:grid-cols-2">
       <article
         onClick={() => {
+          if (selectedMode === 'coding') {
+            setSelectedMode(null);
+            setShowChatbotBot(false);
+            return;
+          }
+
           setSelectedMode('coding');
           setShowChatbotBot(false);
         }}
@@ -185,10 +334,11 @@ export function LandingEntryCards() {
         />
         <h2 className="text-xl font-bold text-orange-100">Coding Agents</h2>
         <p className="mt-2 text-sm leading-6 text-orange-50/85">
-          Paste this line into your coding agent, then let it answer and submit structured ratings.
+          We generate a unique session ID, your coding agent submits JSON via HTTP, then your result appears on Agent
+          Tea.
         </p>
         <code className="mt-4 block rounded-2xl border border-orange-200/30 bg-black/30 px-3 py-2 text-xs text-orange-50">
-          {codingInstruction}
+          follow instructions in /instructions/coding-agent.md, then POST to /api/sessions/&lt;sessionId&gt;/ingest-coding-agent
         </code>
         <div className="mt-4 flex flex-wrap gap-2">
           <button
@@ -197,17 +347,26 @@ export function LandingEntryCards() {
               event.stopPropagation();
               setSelectedMode('coding');
               setShowChatbotBot(false);
-              void copyText('coding', codingInstruction);
+              void copyCodingInstruction();
             }}
-            className="inline-flex rounded-xl bg-orange-200 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-orange-100"
+            disabled={codingFlowState === 'creating'}
+            className="inline-flex rounded-xl bg-orange-200 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-orange-100 disabled:cursor-wait disabled:opacity-75"
           >
-            Copy coding instruction
+            {codingFlowState === 'creating' ? 'Preparing session…' : 'Copy coding instruction'}
           </button>
         </div>
       </article>
 
       <article
-        onClick={() => setSelectedMode('chatbot')}
+        onClick={() => {
+          if (selectedMode === 'chatbot') {
+            setSelectedMode(null);
+            setShowChatbotBot(false);
+            return;
+          }
+
+          setSelectedMode('chatbot');
+        }}
         className={`relative overflow-hidden rounded-3xl border border-cyan-300/45 bg-cyan-400/10 p-6 shadow-[0_0_0_1px_rgba(255,255,255,0.05),0_16px_40px_-16px_rgba(22,189,202,0.55)] transition-all duration-500 ${
           cardsReady ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
         } ${
@@ -243,19 +402,67 @@ export function LandingEntryCards() {
         </div>
       </article>
 
-      {selectedMode ? (
-        <div className="lg:col-span-2">
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedMode(null);
-              setShowChatbotBot(false);
-            }}
-            className="rounded-full border border-white/20 bg-white/5 px-4 py-1.5 text-xs font-semibold text-slate-100 transition hover:bg-white/10"
-          >
-            Show both options again
-          </button>
-        </div>
+      {selectedMode === 'coding' ? (
+        <section className="rounded-3xl border border-orange-100/35 bg-orange-200/15 p-5 shadow-[0_18px_54px_-24px_rgba(251,146,60,0.7)] ring-1 ring-orange-100/20 transition-all duration-700 lg:col-span-2">
+          <div className="mb-4 flex items-center gap-3 rounded-2xl border border-orange-100/25 bg-slate-950/45 p-3">
+            <LobsterMascot
+              variant="bubble"
+              className="h-14 w-14 shrink-0 drop-shadow-[0_10px_12px_rgba(251,146,60,0.3)]"
+            />
+            <p className="text-sm text-orange-50/95">
+              Send the copied instruction to your coding agent. It should submit answers by HTTP and I will auto-open
+              your result page.
+            </p>
+          </div>
+
+          <div className="grid gap-3 rounded-2xl border border-orange-100/20 bg-black/20 p-3 text-xs text-orange-50/95 sm:grid-cols-2">
+            <div>
+              <p className="font-semibold text-orange-100">Session ID</p>
+              <p className="mt-1 break-all font-mono">{codingSessionId ?? 'Will generate on copy'}</p>
+            </div>
+            <div>
+              <p className="font-semibold text-orange-100">Submit endpoint</p>
+              <p className="mt-1 break-all font-mono">
+                {codingSessionId
+                  ? `${typeof window !== 'undefined' ? window.location.origin : ''}/api/sessions/${codingSessionId}/ingest-coding-agent`
+                  : '/api/sessions/<sessionId>/ingest-coding-agent'}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                void copyCodingInstruction();
+              }}
+              disabled={codingFlowState === 'creating'}
+              className="inline-flex rounded-xl bg-orange-200 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-orange-100 disabled:cursor-wait disabled:opacity-75"
+            >
+              {codingFlowState === 'creating' ? 'Preparing session…' : 'Copy instruction again'}
+            </button>
+
+            <button
+              type="button"
+              onClick={checkCodingSubmissionNow}
+              disabled={!codingSessionId}
+              className="inline-flex rounded-xl border border-orange-100/45 bg-orange-100/10 px-4 py-2 text-sm font-semibold text-orange-50 transition hover:bg-orange-100/20 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Check submission now
+            </button>
+
+            {codingSessionId ? (
+              <a
+                href={`/results/${codingSessionId}`}
+                className="inline-flex rounded-xl border border-orange-100/45 bg-orange-100/10 px-4 py-2 text-sm font-semibold text-orange-50 transition hover:bg-orange-100/20"
+              >
+                Open result URL
+              </a>
+            ) : null}
+          </div>
+
+          {codingFlowMessage ? <p className="mt-3 text-sm text-orange-50/95">{codingFlowMessage}</p> : null}
+        </section>
       ) : null}
 
       {showChatbotBot ? (

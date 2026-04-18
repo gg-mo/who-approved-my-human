@@ -83,19 +83,34 @@ export const supabaseSessionStore: SessionStore = {
 
   async createSession(input) {
     const client = createSupabaseServerClient({ useServiceRole: true });
-    const { data, error } = await client
-      .from('test_sessions')
-      .insert({
+    const payloadWithReferral = {
+      question_set_id: input.questionSetId,
+      question_set_version: input.questionSetVersion,
+      intake_mode: input.intakeMode,
+      random_seed: input.randomSeed,
+      referral_code: input.referralCode ?? null,
+      referrer_session_id: input.referrerSessionId ?? null,
+      status: 'pending',
+    };
+
+    const insertWithPayload = async (payload: Record<string, unknown>) =>
+      client.from('test_sessions').insert(payload).select('*').single();
+
+    let { data, error } = await insertWithPayload(payloadWithReferral);
+
+    // Backward-compatible fallback when older deployments are missing referral columns.
+    if (error && /referral_code|referrer_session_id/i.test(error.message ?? '')) {
+      const legacyPayload = {
         question_set_id: input.questionSetId,
         question_set_version: input.questionSetVersion,
         intake_mode: input.intakeMode,
         random_seed: input.randomSeed,
-        referral_code: input.referralCode ?? null,
-        referrer_session_id: input.referrerSessionId ?? null,
         status: 'pending',
-      })
-      .select('*')
-      .single();
+      };
+      const legacyInsert = await insertWithPayload(legacyPayload);
+      data = legacyInsert.data;
+      error = legacyInsert.error;
+    }
 
     if (error) {
       throw error;

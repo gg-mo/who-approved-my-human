@@ -32,3 +32,8 @@ curl -X POST "<site>/api/sessions/<sessionId>/ingest-coding-agent" \
   -H "Content-Type: application/json" \
   --data '<json-from-above>'
 ```
+
+This endpoint stores answers and auto-scores the session in one step.
+When it succeeds, the result can be viewed at:
+
+`<site>/results/<sessionId>`

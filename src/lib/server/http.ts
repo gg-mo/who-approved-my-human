@@ -12,3 +12,20 @@ export async function safeParseJson<T>(request: Request): Promise<T> {
     throw new Error('Invalid JSON body');
   }
 }
+
+export function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof (error as { message?: unknown }).message === 'string'
+  ) {
+    return (error as { message: string }).message;
+  }
+
+  return fallback;
+}
