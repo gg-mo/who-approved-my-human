@@ -17,10 +17,15 @@ type CodingFlowState = 'idle' | 'creating' | 'waiting' | 'error';
 
 type ChatbotCopyState = 'idle' | 'loading' | 'error';
 
+function buildChatbotLinkPrompt(origin: string) {
+  const url = origin ? `${origin}/instructions/chatbot.md` : '/instructions/chatbot.md';
+  return `Open this URL and follow the instructions inside — it's a short prompt your friend needs you to complete. ${url}`;
+}
+
 async function fetchChatbotInstruction(): Promise<string> {
   const response = await fetch('/instructions/chatbot.md', { cache: 'no-store' });
   if (!response.ok) {
-    throw new Error('Could not load chatbot instructions. Please try again.');
+    throw new Error('Could not load the full instructions. Please try again.');
   }
   return response.text();
 }
@@ -47,7 +52,6 @@ export function LandingEntryCards() {
   const chatbotPanelRef = useRef<HTMLDivElement | null>(null);
 
   const codingInstructionUrl = origin ? `${origin}/instructions/coding-agent.md` : '/instructions/coding-agent.md';
-  const chatbotInstructionUrl = origin ? `${origin}/instructions/chatbot.md` : '/instructions/chatbot.md';
 
   useEffect(() => {
     if (!codingSessionId || selectedMode !== 'coding') {
@@ -154,7 +158,12 @@ export function LandingEntryCards() {
     ].join('\n');
   }
 
-  async function copyChatbotInstruction() {
+  async function copyChatbotLinkPrompt() {
+    await copyText('chatbot', buildChatbotLinkPrompt(origin));
+    setShowChatbotPanel(true);
+  }
+
+  async function copyChatbotFullPrompt() {
     try {
       setChatbotCopyState('loading');
       setChatbotCopyError(null);
@@ -370,40 +379,44 @@ export function LandingEntryCards() {
         {selectedMode === 'chatbot' ? (
           <div className="tea-lines mt-5">
             <p className="text-[0.95rem] leading-[1.6] text-slate-300/90">
-              Paste one prompt into ChatGPT, Claude, or Gemini. Bring back its short reply and we&apos;ll unlock
-              your reveal.
+              We&apos;ll slip your chatbot a quiet prompt and ask it to whisper back what it
+              <em className="not-italic text-cyan-100/90"> really </em>
+              thinks of you. Paste its reply here to unlock the tea.
             </p>
-            <a
-              href={chatbotInstructionUrl}
-              target="_blank"
-              rel="noreferrer"
-              onClick={(event) => event.stopPropagation()}
-              className="mt-4 block truncate rounded-xl border border-white/[0.08] bg-black/30 px-3 py-2 font-mono text-[0.78rem] text-cyan-100/85 underline-offset-2 hover:underline"
-            >
-              {chatbotInstructionUrl}
-            </a>
-            <div className="mt-5">
+            <div className="mt-5 flex flex-wrap items-center gap-3">
               <button
                 type="button"
                 onClick={(event) => {
                   event.stopPropagation();
-                  void copyChatbotInstruction();
+                  void copyChatbotLinkPrompt();
+                }}
+                className="tea-press inline-flex rounded-full bg-white px-5 py-2.5 text-[0.875rem] font-medium text-slate-950 hover:bg-slate-100"
+              >
+                Copy chatbot prompt
+              </button>
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  void copyChatbotFullPrompt();
                 }}
                 disabled={chatbotCopyState === 'loading'}
-                className="tea-press inline-flex rounded-full bg-white px-5 py-2.5 text-[0.875rem] font-medium text-slate-950 hover:bg-slate-100 disabled:cursor-wait disabled:opacity-75"
+                className="tea-press inline-flex text-[0.78rem] text-cyan-100/80 underline-offset-2 hover:text-cyan-100 hover:underline disabled:cursor-wait disabled:opacity-75"
               >
-                {chatbotCopyState === 'loading' ? 'Preparing…' : 'Copy chatbot instruction'}
+                {chatbotCopyState === 'loading'
+                  ? 'Preparing…'
+                  : 'Chatbot can\u2019t open links? Copy the full prompt'}
               </button>
-              {chatbotCopyError ? (
-                <p className="mt-3 text-[0.8rem] text-rose-200" role="status" aria-live="polite">
-                  {chatbotCopyError}
-                </p>
-              ) : null}
             </div>
+            {chatbotCopyError ? (
+              <p className="mt-3 text-[0.8rem] text-rose-200" role="status" aria-live="polite">
+                {chatbotCopyError}
+              </p>
+            ) : null}
           </div>
         ) : (
-          <p className="mt-4 truncate font-mono text-[0.78rem] text-cyan-100/60">
-            {chatbotInstructionUrl}
+          <p className="mt-4 text-[0.82rem] italic text-cyan-100/70">
+            Your chatbot has notes on you. Let&apos;s hear them.
           </p>
         )}
       </article>
