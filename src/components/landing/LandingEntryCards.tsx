@@ -429,12 +429,12 @@ export function LandingEntryCards() {
       {showChatbotPanel ? (
         <div ref={chatbotPanelRef} className="tea-rise-in scroll-mt-16 lg:col-span-2">
           <section className="rounded-[28px] border border-white/[0.08] bg-white/[0.03] p-7 backdrop-blur-xl">
-            <p className="tea-eyebrow text-cyan-200/80">Paste reply</p>
+            <p className="tea-eyebrow text-cyan-200/80">Spill the tea</p>
             <label
               htmlFor="chatbotEncodedPayload"
               className="tea-headline mt-2 block text-[1.25rem] text-white"
             >
-              Drop in your chatbot&apos;s encoded line
+              What did your agent whisper back?
             </label>
             <textarea
               id="chatbotEncodedPayload"

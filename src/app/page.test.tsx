@@ -43,14 +43,14 @@ describe('Home page', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /see what your ai thinks of you/i }));
 
-    expect(screen.queryByLabelText(/drop in your chatbot/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/what did your agent whisper back/i)).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /copy chatbot prompt/i })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('heading', { name: /chatbots/i }));
     fireEvent.click(screen.getByRole('button', { name: /^copy chatbot prompt$/i }));
 
     await waitFor(() =>
-      expect(screen.getByLabelText(/drop in your chatbot/i)).toBeInTheDocument(),
+      expect(screen.getByLabelText(/what did your agent whisper back/i)).toBeInTheDocument(),
     );
   });
 });
