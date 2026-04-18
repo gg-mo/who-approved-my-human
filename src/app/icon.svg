@@ -16,7 +16,4 @@
   <ellipse cx="32" cy="22" rx="25" ry="4.5"
            fill="#4ade80" stroke="#0f172a" stroke-width="2"/>
 
-  <text x="32" y="26" text-anchor="middle"
-        font-family="Georgia, 'Times New Roman', serif"
-        font-size="8" font-weight="700" fill="#0f172a">T</text>
 </svg>
