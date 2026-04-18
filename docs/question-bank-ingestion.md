@@ -11,6 +11,8 @@ npm run db:ingest-questions
 npm run db:verify-questions
 ```
 
+The scripts automatically load `.env.local` (or `.env`) before running, so manual `source` is not required.
+
 ## Required Environment Variables
 
 - `NEXT_PUBLIC_SUPABASE_URL`

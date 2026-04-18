@@ -1,4 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
+import { loadScriptEnv } from './load-script-env.mjs';
+
+loadScriptEnv();
 
 function requireEnv(name) {
   const value = process.env[name];
