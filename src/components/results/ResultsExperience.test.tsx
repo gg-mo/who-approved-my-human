@@ -55,6 +55,12 @@ const baseResult = {
       dominantPercent: 0.65,
     },
   ],
+  tieFlags: {
+    clarity: false,
+    tone: false,
+    thinking_style: false,
+    autonomy: false,
+  },
   replayAnswers: [
     {
       questionCode: 'Q01',
@@ -79,6 +85,7 @@ describe('ResultsExperience', () => {
     expect(screen.getByText(/what your agent likely loves/i)).toBeInTheDocument();
     expect(screen.getByText(/what may frustrate your agent/i)).toBeInTheDocument();
     expect(screen.getByText(/strongest signals/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /intrusive thoughts/i })).toBeInTheDocument();
   });
 
   it('reveals animated answer replay entries over time', async () => {

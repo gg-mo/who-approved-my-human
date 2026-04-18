@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { LobsterMascot } from '@/components/landing/LobsterMascot';
-import { buildProfileCopy } from '@/lib/results/profile-copy';
+import { type NarrativeMode } from '@/lib/results/copy-content';
+import { buildProfileCopy, getDimensionLabels } from '@/lib/results/profile-copy';
 import type { DimensionId } from '@/lib/scoring/types';
 
 type ReplayAnswer = {
@@ -32,6 +33,7 @@ type ResultsPayload = {
     confidenceDelta: number;
     dominantPercent: number;
   }>;
+  tieFlags: Record<DimensionId, boolean>;
   replayAnswers: ReplayAnswer[];
 };
 
@@ -43,23 +45,25 @@ const likertLabels = {
   5: 'Strongly agree',
 } as const;
 
-const dimensionLabels: Record<DimensionId, { positive: string; negative: string }> = {
-  clarity: { positive: 'Clear', negative: 'Cryptic' },
-  tone: { positive: 'Kind', negative: 'Combative' },
-  thinking_style: { positive: 'Visionary', negative: 'Tactical' },
-  autonomy: { positive: 'Delegating', negative: 'Controlling' },
-};
-
 function percent(value: number) {
   return Math.round(value * 100);
 }
 
 export function ResultsExperience({ result }: { result: ResultsPayload }) {
   const [visibleCount, setVisibleCount] = useState(0);
+  const [mode, setMode] = useState<NarrativeMode>('normal');
   const profileCopy = useMemo(
-    () => buildProfileCopy(result.typeCode, result.dimensionBreakdown),
-    [result.typeCode, result.dimensionBreakdown],
+    () =>
+      buildProfileCopy({
+        typeCode: result.typeCode,
+        breakdown: result.dimensionBreakdown,
+        strongestSignals: result.strongestSignals,
+        tieFlags: result.tieFlags,
+        mode,
+      }),
+    [mode, result.dimensionBreakdown, result.strongestSignals, result.tieFlags, result.typeCode],
   );
+  const dimensionLabels = useMemo(() => getDimensionLabels(mode), [mode]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -86,6 +90,26 @@ export function ResultsExperience({ result }: { result: ResultsPayload }) {
             <h1 className="mt-4 text-5xl font-black tracking-tight sm:text-6xl">{result.typeCode}</h1>
             <p className="mt-2 text-2xl font-bold text-orange-200">{profileCopy.nickname}</p>
             <p className="mt-4 max-w-3xl text-base leading-7 text-slate-300">{profileCopy.oneLiner}</p>
+            <div className="mt-5 inline-flex rounded-full border border-white/20 bg-slate-900/80 p-1 text-sm">
+              <button
+                type="button"
+                onClick={() => setMode('normal')}
+                className={`rounded-full px-4 py-1.5 transition ${
+                  mode === 'normal' ? 'bg-cyan-300 text-slate-950' : 'text-cyan-100 hover:bg-white/10'
+                }`}
+              >
+                Normal
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode('intrusive')}
+                className={`rounded-full px-4 py-1.5 transition ${
+                  mode === 'intrusive' ? 'bg-orange-300 text-slate-950' : 'text-orange-100 hover:bg-white/10'
+                }`}
+              >
+                Intrusive Thoughts
+              </button>
+            </div>
           </div>
           <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
             <LobsterMascot className="mx-auto w-48 drop-shadow-[0_20px_24px_rgba(255,98,74,0.3)]" />
