@@ -29,45 +29,23 @@ const OPTIONS: Array<{ value: 1 | 2 | 3 | 4 | 5; label: string }> = [
   { value: 5, label: 'Strongly agree' },
 ];
 
-const MAX_STEPS = 5;
-
 const STAGE = {
   options: 420,
   highlight: 900,
   bubble: 1400,
-  typeCharMs: 18,
-  tail: 650,
+  typeCharMs: 22,
+  autoplayDelay: 2800,
 } as const;
 
 function pickReplaySet(result: ReplayPayload): ReplayAnswer[] {
-  const byCode = new Map(result.replayAnswers.map((a) => [a.questionCode, a]));
-  const picked: ReplayAnswer[] = [];
   const seen = new Set<string>();
-
-  const push = (code: string) => {
-    if (seen.has(code)) return;
-    const answer = byCode.get(code);
-    if (!answer) return;
-    seen.add(code);
-    picked.push(answer);
-  };
-
-  const support = result.evidence?.strongestSupport ?? [];
-  const contradictions = result.evidence?.strongestContradictions ?? [];
-
-  support.slice(0, 3).forEach((item) => push(item.questionCode));
-  contradictions.slice(0, 2).forEach((item) => push(item.questionCode));
-
-  if (picked.length < MAX_STEPS) {
-    for (const answer of result.replayAnswers) {
-      if (picked.length >= MAX_STEPS) break;
-      push(answer.questionCode);
-    }
+  const ordered: ReplayAnswer[] = [];
+  for (const answer of result.replayAnswers) {
+    if (seen.has(answer.questionCode)) continue;
+    seen.add(answer.questionCode);
+    ordered.push(answer);
   }
-
-  return picked
-    .slice(0, MAX_STEPS)
-    .sort((a, b) => a.displayOrder - b.displayOrder);
+  return ordered.sort((a, b) => a.displayOrder - b.displayOrder);
 }
 
 export function ReplayExperience({
@@ -80,6 +58,7 @@ export function ReplayExperience({
   const steps = useMemo(() => pickReplaySet(result), [result]);
   const [stepIndex, setStepIndex] = useState(0);
   const [isExiting, setIsExiting] = useState(false);
+  const [autoplay, setAutoplay] = useState(false);
   const exitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const totalSteps = steps.length;
@@ -135,7 +114,7 @@ export function ReplayExperience({
 
   return (
     <main
-      className={`min-h-screen px-6 py-12 text-slate-100 transition-opacity duration-500 sm:px-10 ${
+      className={`min-h-screen px-6 py-10 text-slate-100 transition-opacity duration-500 sm:px-10 ${
         isExiting ? 'opacity-0' : 'opacity-100'
       }`}
       style={{
@@ -145,34 +124,68 @@ export function ReplayExperience({
     >
       <div className="tea-curtain" aria-hidden />
 
-      <div className="mx-auto flex min-h-[calc(100vh-6rem)] w-full max-w-4xl flex-col">
-        <header className="flex items-center justify-between pt-2">
+      <div className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-4xl flex-col">
+        <header className="flex items-center justify-between gap-3 pt-2">
           <div>
             <p className="tea-eyebrow text-cyan-200/80">Spilling the tea</p>
             <p className="mt-2 text-sm text-slate-300">
-              Question {stepIndex + 1} of {totalSteps}
+              Question {stepIndex + 1} of {totalSteps} · take your time
             </p>
           </div>
-          <button
-            type="button"
-            onClick={skipToResults}
-            className="tea-press rounded-full border border-white/15 bg-white/[0.04] px-4 py-2 text-xs font-medium text-slate-200 hover:bg-white/[0.08]"
-          >
-            Skip to result →
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setAutoplay((prev) => !prev)}
+              aria-pressed={autoplay}
+              className={`tea-press inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-medium transition-colors ${
+                autoplay
+                  ? 'border-cyan-200/60 bg-cyan-200/15 text-cyan-50'
+                  : 'border-white/15 bg-white/[0.04] text-slate-200 hover:bg-white/[0.08]'
+              }`}
+              title={autoplay ? 'Autoplay on — click to pause' : 'Autoplay off — click to let it play itself'}
+            >
+              <span aria-hidden className="text-[0.7rem]">{autoplay ? '❚❚' : '▶'}</span>
+              {autoplay ? 'Autoplay' : 'Self-paced'}
+            </button>
+            <button
+              type="button"
+              onClick={skipToResults}
+              className="tea-press rounded-full border border-white/15 bg-white/[0.04] px-4 py-2 text-xs font-medium text-slate-200 hover:bg-white/[0.08]"
+            >
+              Skip to result →
+            </button>
+          </div>
         </header>
 
-        <div className="mt-3 h-[3px] w-full overflow-hidden rounded-full bg-white/[0.06]">
-          <div
-            className="h-full bg-gradient-to-r from-cyan-300 to-violet-300 transition-[width] duration-500 ease-[cubic-bezier(0.22,0.61,0.36,1)]"
-            style={{ width: `${((stepIndex + 1) / totalSteps) * 100}%` }}
-          />
-        </div>
+        {totalSteps <= 12 ? (
+          <div className="mt-4 flex gap-1.5" aria-hidden>
+            {steps.map((_, idx) => (
+              <div
+                key={idx}
+                className={`h-[3px] flex-1 overflow-hidden rounded-full transition-colors duration-500 ${
+                  idx < stepIndex
+                    ? 'bg-gradient-to-r from-cyan-300/90 to-violet-300/90'
+                    : idx === stepIndex
+                      ? 'bg-gradient-to-r from-cyan-300 to-violet-300'
+                      : 'bg-white/[0.08]'
+                }`}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="mt-4 h-[3px] w-full overflow-hidden rounded-full bg-white/[0.08]" aria-hidden>
+            <div
+              className="h-full bg-gradient-to-r from-cyan-300 to-violet-300 transition-[width] duration-500 ease-[cubic-bezier(0.22,0.61,0.36,1)]"
+              style={{ width: `${((stepIndex + 1) / totalSteps) * 100}%` }}
+            />
+          </div>
+        )}
 
         <ReplayStep
           key={stepIndex}
           step={currentStep}
           isLast={isLast}
+          autoplay={autoplay}
           onAdvance={handleAdvance}
         />
       </div>
@@ -183,10 +196,12 @@ export function ReplayExperience({
 function ReplayStep({
   step,
   isLast,
+  autoplay,
   onAdvance,
 }: {
   step: ReplayAnswer;
   isLast: boolean;
+  autoplay: boolean;
   onAdvance: () => void;
 }) {
   const [phase, setPhase] = useState<'question' | 'options' | 'highlight' | 'bubble' | 'finale'>(
@@ -203,7 +218,7 @@ function ReplayStep({
     if (hasReasoning) {
       timers.push(setTimeout(() => setPhase('bubble'), STAGE.bubble));
     } else {
-      timers.push(setTimeout(onAdvance, STAGE.highlight + 800));
+      timers.push(setTimeout(() => setPhase('finale'), STAGE.highlight + 600));
     }
     return () => timers.forEach(clearTimeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -221,16 +236,26 @@ function ReplayStep({
       if (i < reasoning.length) {
         timers.push(setTimeout(tick, STAGE.typeCharMs));
       } else {
-        timers.push(setTimeout(onAdvance, STAGE.tail));
+        timers.push(setTimeout(() => setPhase('finale'), 220));
       }
     };
-    timers.push(setTimeout(tick, 60));
+    timers.push(setTimeout(tick, 80));
     return () => timers.forEach(clearTimeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 
+  useEffect(() => {
+    if (!autoplay) return;
+    if (phase !== 'finale') return;
+    const timer = setTimeout(onAdvance, STAGE.autoplayDelay);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoplay, phase]);
+
+  const ready = phase === 'finale';
+
   return (
-    <section className="mt-10 grid flex-1 items-center gap-10 lg:grid-cols-[0.9fr_1.3fr]">
+    <section className="mt-8 grid flex-1 items-center gap-10 pb-6 lg:grid-cols-[0.9fr_1.3fr]">
       <div className="order-2 lg:order-1">
         <LobsterMascot
           variant="hero"
@@ -309,11 +334,20 @@ function ReplayStep({
           ) : null}
         </article>
 
-        <div className="mt-5 flex items-center justify-end">
+        <div className="mt-5 flex items-center justify-between gap-3">
+          <p
+            className={`text-xs text-slate-400 transition-opacity duration-500 ${
+              ready && !autoplay ? 'opacity-100' : 'opacity-0'
+            }`}
+            aria-live="polite"
+          >
+            {isLast ? 'Ready for the verdict?' : 'Read it at your own pace.'}
+          </p>
           <button
             type="button"
             onClick={onAdvance}
-            className="tea-press inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-medium text-slate-950 hover:bg-slate-100"
+            disabled={!ready}
+            className="tea-press inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-medium text-slate-950 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-45"
           >
             {isLast ? 'Reveal my type' : 'Next'} →
           </button>
