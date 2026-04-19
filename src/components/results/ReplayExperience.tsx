@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { LobsterMascot } from '@/components/landing/LobsterMascot';
+import { TeaHomeBadge } from '@/components/shared/TeaHomeBadge';
 
 type ReplayAnswer = {
   questionCode: string;
@@ -104,6 +105,7 @@ export function ReplayExperience({
             'linear-gradient(145deg, var(--tea-bg-deep) 0%, var(--tea-bg-mid) 45%, var(--tea-bg-glow) 100%)',
         }}
       >
+        <TeaHomeBadge />
         <div className="mx-auto max-w-2xl text-center">
           <p className="tea-fade-in text-sm uppercase tracking-[0.3em] text-cyan-200/80">Spilling the tea</p>
           <p className="tea-rise-in mt-4 text-xl text-slate-200">Preparing your verdict…</p>
@@ -123,6 +125,7 @@ export function ReplayExperience({
       }}
     >
       <div className="tea-curtain" aria-hidden />
+      <TeaHomeBadge />
 
       <div className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-4xl flex-col">
         <header className="flex items-center justify-between gap-3 pt-2">

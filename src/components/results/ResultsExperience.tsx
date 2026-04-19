@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
 import { MoodToggle } from '@/components/results/MoodToggle';
+import { TeaHomeBadge } from '@/components/shared/TeaHomeBadge';
 import { type NarrativeMode } from '@/lib/results/copy-content';
 import { buildProfileCopy, getDimensionLabels } from '@/lib/results/profile-copy';
 import { getTypeContent } from '@/lib/results/type-content';
@@ -220,6 +221,7 @@ export function ResultsExperience({
         transition: 'background 500ms ease',
       }}
     >
+      <TeaHomeBadge />
       <div className="mx-auto max-w-6xl space-y-12">
         {/* 1. Hero reveal */}
         <section className="grid items-center gap-10 lg:grid-cols-[1.2fr_0.8fr]">
