@@ -335,7 +335,9 @@ export function LandingEntryCards() {
         {selectedMode === 'coding' ? (
           <div className="tea-lines mt-5">
             <p className="text-[0.95rem] leading-[1.6] text-slate-300/90">
-              Copy one instruction, paste it into any open chat with your coding agent.
+              Copy one instruction, paste it into any{' '}
+              <em className="not-italic font-semibold text-orange-100">open chat or session</em>{' '}
+              with your coding agent.
             </p>
             <a
               href={codingInstructionUrl}
