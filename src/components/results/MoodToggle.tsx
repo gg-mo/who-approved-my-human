@@ -12,47 +12,74 @@ export function MoodToggle({ mode, onChange }: MoodToggleProps) {
   const isIntrusive = mode === 'intrusive';
 
   return (
-    <div className="relative mx-auto flex w-full max-w-md items-center justify-between gap-4">
-      <MoodButton
-        label="Angel mode"
-        tooltip="Keep it nice — the polished read."
-        active={!isIntrusive}
-        onClick={() => onChange('normal')}
-        accent="cyan"
-      >
-        <AngelIcon />
-      </MoodButton>
+    <div className="relative mx-auto flex w-full max-w-md items-start justify-between gap-4">
+      <div className="flex flex-col items-center gap-3">
+        <MoodButton
+          label="Angel mode"
+          active={!isIntrusive}
+          onClick={() => onChange('normal')}
+          accent="cyan"
+        >
+          <AngelIcon />
+        </MoodButton>
+        <CaptionPill active={!isIntrusive} accent="cyan">Keep it nice</CaptionPill>
+      </div>
 
-      <div className="pointer-events-none flex-1">
+      <div className="pointer-events-none flex-1 self-center">
         <LobsterMascot
           variant="hero"
-          className={`mx-auto w-64 select-none sm:w-72 ${isIntrusive ? 'tea-mascot-evil' : 'tea-mascot-bob'} drop-shadow-[0_28px_40px_rgba(255,98,74,0.35)]`}
+          className="tea-mascot-bob mx-auto w-64 select-none drop-shadow-[0_28px_40px_rgba(255,98,74,0.35)] sm:w-72"
         />
       </div>
 
-      <MoodButton
-        label="Devil mode"
-        tooltip="Spill the intrusive thoughts."
-        active={isIntrusive}
-        onClick={() => onChange('intrusive')}
-        accent="rose"
-      >
-        <DevilIcon />
-      </MoodButton>
+      <div className="flex flex-col items-center gap-3">
+        <MoodButton
+          label="Devil mode"
+          active={isIntrusive}
+          onClick={() => onChange('intrusive')}
+          accent="rose"
+        >
+          <DevilIcon />
+        </MoodButton>
+        <CaptionPill active={isIntrusive} accent="rose">Spill the tea</CaptionPill>
+      </div>
     </div>
+  );
+}
+
+function CaptionPill({
+  active,
+  accent,
+  children,
+}: {
+  active: boolean;
+  accent: 'cyan' | 'rose';
+  children: React.ReactNode;
+}) {
+  const activeStyle =
+    accent === 'cyan'
+      ? 'border-cyan-300/50 bg-cyan-300/15 text-cyan-50'
+      : 'border-rose-400/60 bg-rose-400/15 text-rose-50';
+  return (
+    <span
+      aria-hidden={!active}
+      className={`pointer-events-none whitespace-nowrap rounded-full border px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.14em] transition-opacity duration-300 ${
+        active ? `opacity-100 ${activeStyle}` : 'border-transparent bg-transparent text-transparent opacity-0'
+      }`}
+    >
+      {children}
+    </span>
   );
 }
 
 function MoodButton({
   label,
-  tooltip,
   active,
   onClick,
   accent,
   children,
 }: {
   label: string;
-  tooltip: string;
   active: boolean;
   onClick: () => void;
   accent: 'cyan' | 'rose';
@@ -71,24 +98,12 @@ function MoodButton({
       onClick={onClick}
       aria-label={label}
       aria-pressed={active}
-      className={`group relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-slate-900/60 ring-1 ring-white/10 backdrop-blur transition duration-300 hover:scale-105 sm:h-24 sm:w-24 ${
+      className={`relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-slate-900/60 ring-1 ring-white/10 backdrop-blur transition duration-300 hover:scale-105 sm:h-24 sm:w-24 ${
         active ? `ring-2 ${ringColor}` : `${idleColor}`
       }`}
     >
       <span className={`${animClass} flex h-full w-full items-center justify-center`}>
         {children}
-      </span>
-      <span
-        role="tooltip"
-        className={`pointer-events-none absolute -bottom-10 left-1/2 max-w-[10rem] -translate-x-1/2 whitespace-normal rounded-full px-3 py-1 text-center text-[0.7rem] font-medium text-slate-100 shadow-lg ring-1 ring-white/10 transition-opacity duration-200 ${
-          active
-            ? `opacity-100 ${
-                accent === 'cyan' ? 'bg-cyan-300/20 text-cyan-50' : 'bg-rose-400/20 text-rose-50'
-              }`
-            : 'bg-slate-950/95 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100'
-        }`}
-      >
-        {tooltip}
       </span>
     </button>
   );
