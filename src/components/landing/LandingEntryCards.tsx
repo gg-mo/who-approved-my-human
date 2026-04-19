@@ -17,11 +17,6 @@ type CodingFlowState = 'idle' | 'creating' | 'waiting' | 'error';
 
 type ChatbotCopyState = 'idle' | 'loading' | 'error';
 
-function buildChatbotLinkPrompt(origin: string) {
-  const url = origin ? `${origin}/instructions/chatbot.md` : '/instructions/chatbot.md';
-  return `Open this URL and follow the instructions inside — it's a short prompt your friend needs you to complete. ${url}`;
-}
-
 async function fetchChatbotInstruction(): Promise<string> {
   const response = await fetch('/instructions/chatbot.md', { cache: 'no-store' });
   if (!response.ok) {
@@ -226,11 +221,6 @@ export function LandingEntryCards() {
       '',
       'Do not ask me to submit manually. Submit it yourself and then tell me it was sent.',
     ].join('\n');
-  }
-
-  function copyChatbotLinkPrompt() {
-    copyText('chatbot', buildChatbotLinkPrompt(origin), 'Chatbot prompt');
-    setShowChatbotPanel(true);
   }
 
   async function copyChatbotFullPrompt() {
@@ -481,24 +471,12 @@ export function LandingEntryCards() {
                 type="button"
                 onClick={(event) => {
                   event.stopPropagation();
-                  void copyChatbotLinkPrompt();
-                }}
-                className="tea-press inline-flex rounded-full bg-white px-5 py-2.5 text-[0.875rem] font-medium text-slate-950 hover:bg-slate-100"
-              >
-                Copy chatbot prompt
-              </button>
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
                   void copyChatbotFullPrompt();
                 }}
                 disabled={chatbotCopyState === 'loading'}
-                className="tea-press inline-flex items-center rounded-full border border-cyan-200/40 bg-cyan-200/10 px-4 py-2 text-[0.8rem] font-medium text-cyan-100/90 hover:border-cyan-200/60 hover:bg-cyan-200/15 hover:text-cyan-50 disabled:cursor-wait disabled:opacity-75"
+                className="tea-press inline-flex rounded-full bg-white px-5 py-2.5 text-[0.875rem] font-medium text-slate-950 hover:bg-slate-100 disabled:cursor-wait disabled:opacity-75"
               >
-                {chatbotCopyState === 'loading'
-                  ? 'Preparing…'
-                  : 'Chatbot can\u2019t open links? Copy the full prompt'}
+                {chatbotCopyState === 'loading' ? 'Preparing…' : 'Copy chatbot prompt'}
               </button>
             </div>
             {chatbotCopyError ? (
