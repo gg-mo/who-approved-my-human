@@ -328,6 +328,9 @@ export function LandingEntryCards() {
           </span>
         </div>
         <p className="tea-headline mt-3 text-[1.5rem] text-white">I have a coding agent.</p>
+        <p className="mt-1.5 text-[0.78rem] text-slate-400/90">
+          e.g. Claude Code, Codex, Cursor, Copilot, Windsurf
+        </p>
 
         {selectedMode === 'coding' ? (
           <div className="tea-lines mt-5">
@@ -383,6 +386,9 @@ export function LandingEntryCards() {
         />
         <h2 className="tea-eyebrow text-cyan-200/80">Chatbots</h2>
         <p className="tea-headline mt-3 text-[1.5rem] text-white">I use a chatbot.</p>
+        <p className="mt-1.5 text-[0.78rem] text-slate-400/90">
+          e.g. ChatGPT, Gemini, Claude, Doubao, DeepSeek
+        </p>
 
         {selectedMode === 'chatbot' ? (
           <div className="tea-lines mt-5">
