@@ -1,12 +1,13 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
-import { LobsterMascot } from '@/components/landing/LobsterMascot';
 import { MoodToggle } from '@/components/results/MoodToggle';
 import { type NarrativeMode } from '@/lib/results/copy-content';
 import { buildProfileCopy, getDimensionLabels } from '@/lib/results/profile-copy';
 import { buildShareCardHighlights, buildShareCardText } from '@/lib/results/share-card';
+import { getTypeContent } from '@/lib/results/type-content';
 import { MIN_SAMPLE_FOR_SOCIAL_PROOF } from '@/lib/scoring/constants';
 import type { DimensionId } from '@/lib/scoring/types';
 
@@ -66,19 +67,38 @@ type SocialProof = {
   rarest: { typeCode: string; count: number } | null;
 };
 
-const likertLabels = {
-  1: 'Strongly disagree',
-  2: 'Disagree',
-  3: 'Neutral',
-  4: 'Agree',
-  5: 'Strongly agree',
-} as const;
-
-const REPLAY_INTERVAL_MS = 180;
 const CLAIM_SUCCESS_REDIRECT_MS = 1100;
+
+const DIMENSION_ORDER: DimensionId[] = ['clarity', 'tone', 'thinking_style', 'autonomy'];
+
+const AXIS_BLURBS: Record<
+  DimensionId,
+  { positive: string; negative: string }
+> = {
+  clarity: {
+    positive: 'You usually say what you mean.',
+    negative: 'You leave the brief open and let the agent fill the gaps.',
+  },
+  tone: {
+    positive: 'You are constructive, even when demanding change.',
+    negative: 'You are direct — padding gets trimmed off.',
+  },
+  thinking_style: {
+    positive: 'You lead with direction and taste.',
+    negative: 'You head straight for execution and ship.',
+  },
+  autonomy: {
+    positive: 'You hand over the work and let it happen.',
+    negative: 'You stay close enough to shape the result in real time.',
+  },
+};
 
 function percent(value: number) {
   return Math.round(value * 100);
+}
+
+function formatDimensionName(dimension: DimensionId) {
+  return dimension === 'thinking_style' ? 'Thinking Style' : dimension.charAt(0).toUpperCase() + dimension.slice(1);
 }
 
 export function ResultsExperience({
@@ -92,14 +112,15 @@ export function ResultsExperience({
   socialProof?: SocialProof;
   isSignedIn?: boolean;
 }) {
-  const [visibleCount, setVisibleCount] = useState(0);
   const [mode, setMode] = useState<NarrativeMode>('normal');
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
+  const [quoteCopyState, setQuoteCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
   const [compareSessionId, setCompareSessionId] = useState('');
   const [compareStatus, setCompareStatus] = useState<'idle' | 'working' | 'error'>('idle');
   const [compareError, setCompareError] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'working' | 'saved' | 'error'>('idle');
-  const [showEvidence, setShowEvidence] = useState(false);
+
+  const typeContent = useMemo(() => getTypeContent(result.typeCode), [result.typeCode]);
 
   const profileCopy = useMemo(
     () =>
@@ -129,20 +150,6 @@ export function ResultsExperience({
     [mode, profileCopy.nickname, result.typeCode, shareHighlights],
   );
   const minimumSample = socialProof?.minimumSample ?? MIN_SAMPLE_FOR_SOCIAL_PROOF;
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setVisibleCount((prev) => {
-        if (prev >= result.replayAnswers.length) {
-          clearInterval(timer);
-          return prev;
-        }
-        return prev + 1;
-      });
-    }, REPLAY_INTERVAL_MS);
-
-    return () => clearInterval(timer);
-  }, [result.replayAnswers.length]);
 
   useEffect(() => {
     if (profileCopy.moderation.rewriteCount <= 0) {
@@ -181,6 +188,19 @@ export function ResultsExperience({
       await recordEvent('share_click', { mode, action: 'copy_text', typeCode: result.typeCode });
     } catch {
       setCopyState('error');
+    }
+  }
+
+  async function copySignatureQuote() {
+    try {
+      const label = mode === 'intrusive' ? 'Intrusive thoughts' : 'Out loud';
+      const quote = mode === 'intrusive' ? typeContent.intrusiveQuote : typeContent.outLoudQuote;
+      await navigator.clipboard.writeText(`${label}: "${quote}" — ${result.typeCode} ${typeContent.normalName}`);
+      setQuoteCopyState('copied');
+      window.setTimeout(() => setQuoteCopyState('idle'), 2200);
+      await recordEvent('share_click', { mode, action: 'copy_quote', typeCode: result.typeCode });
+    } catch {
+      setQuoteCopyState('error');
     }
   }
 
@@ -236,6 +256,10 @@ export function ResultsExperience({
   }
 
   const isIntrusive = mode === 'intrusive';
+  const displayName = isIntrusive ? typeContent.intrusiveName : typeContent.normalName;
+  const akaName = isIntrusive ? typeContent.normalName : typeContent.intrusiveName;
+  const mainDescription = isIntrusive ? typeContent.intrusiveDescription : typeContent.normalDescription;
+  const modeLabel = isIntrusive ? 'What your agent is actually thinking' : 'What your agent would say';
 
   return (
     <main
@@ -249,8 +273,9 @@ export function ResultsExperience({
         transition: 'background 500ms ease',
       }}
     >
-      <div className="mx-auto max-w-6xl">
-        <section className="grid items-center gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+      <div className="mx-auto max-w-6xl space-y-12">
+        {/* 1. Hero reveal */}
+        <section className="grid items-center gap-10 lg:grid-cols-[1.2fr_0.8fr]">
           <div className="tea-rise-in">
             <p
               className={`w-fit rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide transition-colors ${
@@ -259,50 +284,307 @@ export function ResultsExperience({
                   : 'border-cyan-200/35 bg-cyan-200/10 text-cyan-100'
               }`}
             >
-              Agent Tea Result
+              Agent Tea dossier
             </p>
-            <h1 className="mt-4 text-5xl font-black tracking-tight sm:text-6xl">{result.typeCode}</h1>
+            <h1
+              className="mt-5 text-6xl font-black tracking-tight sm:text-7xl"
+              aria-label={result.typeCode}
+            >
+              {result.typeCode}
+            </h1>
             <p
-              className={`mt-2 text-2xl font-bold transition-colors ${
+              className={`mt-3 text-3xl font-bold transition-colors sm:text-4xl ${
                 isIntrusive ? 'text-rose-200' : 'text-orange-200'
               }`}
             >
-              {profileCopy.nickname}
+              {displayName}
             </p>
-            <p className="mt-4 max-w-3xl text-base leading-7 text-slate-300">{profileCopy.oneLiner}</p>
+            <p className="mt-1 text-sm italic text-slate-300/80">aka {akaName}</p>
+            <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-200">{typeContent.summary}</p>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300/80">{profileCopy.oneLiner}</p>
+
+            <div className="mt-8 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={copyShareText}
+                className="tea-press rounded-full bg-cyan-300 px-5 py-2.5 text-sm font-semibold text-slate-950 hover:bg-cyan-200"
+              >
+                Share result
+              </button>
+              <Link
+                href="/"
+                className="tea-press rounded-full border border-white/20 bg-white/5 px-5 py-2.5 text-sm font-semibold text-slate-100 hover:bg-white/10"
+              >
+                Retake
+              </Link>
+              <a
+                href={shareCardUrl}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => {
+                  void recordEvent('share_click', {
+                    mode,
+                    action: 'open_share_card',
+                    typeCode: result.typeCode,
+                  });
+                }}
+                className="tea-press rounded-full border border-orange-200/50 bg-orange-300/10 px-5 py-2.5 text-sm font-semibold text-orange-100 hover:bg-orange-300/20"
+              >
+                Share card
+              </a>
+            </div>
+            {copyState === 'copied' ? (
+              <p className="tea-toast mt-3 text-xs text-emerald-200" role="status" aria-live="polite">
+                Copied share text to clipboard.
+              </p>
+            ) : null}
+            {copyState === 'error' ? (
+              <p className="tea-toast mt-3 text-xs text-rose-200" role="status" aria-live="polite">
+                Clipboard blocked. Please copy manually.
+              </p>
+            ) : null}
           </div>
-          <div className="tea-scale-in pb-6 pt-4" style={{ animationDelay: '120ms' }}>
+
+          <div className="tea-scale-in" style={{ animationDelay: '120ms' }}>
             <MoodToggle mode={mode} onChange={setMode} />
+            <p className="mt-6 text-center text-xs uppercase tracking-wide text-slate-400">
+              {isIntrusive ? "Your agent's intrusive thoughts" : 'What your agent says'}
+            </p>
           </div>
         </section>
 
-        <section className="tea-rise-in mt-8 grid gap-3 rounded-3xl border border-white/10 bg-white/5 p-5" style={{ animationDelay: '80ms' }}>
-          {Object.entries(result.dimensionBreakdown).map(([dimension, values]) => {
-            const label = dimensionLabels[dimension as DimensionId];
-            return (
-              <div key={dimension}>
-                <div className="mb-1 flex justify-between text-xs text-slate-300">
-                  <span>
-                    {label.positive} {percent(values.positivePercent)}%
-                  </span>
-                  <span>
-                    {label.negative} {percent(values.negativePercent)}%
-                  </span>
-                </div>
-                <div className="h-2 overflow-hidden rounded-full bg-slate-800">
-                  <div
-                    className="h-2 rounded-full bg-gradient-to-r from-cyan-300 via-teal-300 to-orange-300 transition-[width] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
-                    style={{ width: `${Math.max(4, percent(values.positivePercent))}%` }}
-                  />
-                </div>
-              </div>
-            );
-          })}
+        {/* 2. Signature quote card */}
+        <section
+          className="tea-rise-in relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-slate-900/80 via-slate-950/80 to-slate-900/80 p-6 shadow-2xl sm:p-8"
+          style={{ animationDelay: '80ms' }}
+        >
+          <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-orange-400/10 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-rose-400/10 blur-3xl" />
+          <div className="relative grid gap-6 md:grid-cols-2">
+            <QuoteBlock
+              label="Out loud"
+              quote={typeContent.outLoudQuote}
+              accent="cyan"
+              dimmed={isIntrusive}
+            />
+            <QuoteBlock
+              label="Intrusive thoughts"
+              quote={typeContent.intrusiveQuote}
+              accent="rose"
+              dimmed={!isIntrusive}
+            />
+          </div>
+          <div className="relative mt-6 flex flex-wrap items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={copySignatureQuote}
+              className="tea-press rounded-full border border-white/20 bg-white/5 px-4 py-2 text-xs font-semibold text-slate-100 hover:bg-white/10"
+            >
+              Copy current quote
+            </button>
+            {quoteCopyState === 'copied' ? (
+              <span className="text-xs text-emerald-200" role="status" aria-live="polite">
+                Copied.
+              </span>
+            ) : null}
+            {quoteCopyState === 'error' ? (
+              <span className="text-xs text-rose-200" role="status" aria-live="polite">
+                Clipboard blocked.
+              </span>
+            ) : null}
+          </div>
         </section>
 
-        <section className="tea-rise-in mt-8 rounded-3xl border border-white/10 bg-white/5 p-5" style={{ animationDelay: '140ms' }}>
+        {/* 3. Collaboration DNA */}
+        <section className="tea-rise-in" style={{ animationDelay: '140ms' }}>
+          <header className="mb-5">
+            <p className="text-xs font-semibold uppercase tracking-widest text-cyan-200/70">Your collaboration DNA</p>
+            <h2 className="mt-1 text-2xl font-bold text-slate-100">How your agent experiences you</h2>
+          </header>
+          <div className="grid gap-4 md:grid-cols-2">
+            {DIMENSION_ORDER.map((dimension) => {
+              const breakdown = result.dimensionBreakdown[dimension];
+              const label = dimensionLabels[dimension];
+              const isPositive = breakdown.dominantLetter === breakdown.positiveLetter;
+              const markerPercent = isPositive
+                ? percent(breakdown.positivePercent)
+                : 100 - percent(breakdown.negativePercent);
+              const blurb = isPositive ? AXIS_BLURBS[dimension].positive : AXIS_BLURBS[dimension].negative;
+
+              return (
+                <article
+                  key={dimension}
+                  className="rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm"
+                >
+                  <div className="flex items-baseline justify-between gap-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-slate-400">
+                        {formatDimensionName(dimension)}
+                      </p>
+                      <p className="mt-1 text-3xl font-black text-slate-100">
+                        {breakdown.dominantLetter}
+                      </p>
+                      <p className="text-sm font-semibold text-cyan-100">
+                        {isPositive ? label.positive : label.negative}
+                      </p>
+                    </div>
+                    <p className="text-right text-xs text-slate-400">
+                      {percent(isPositive ? breakdown.positivePercent : breakdown.negativePercent)}%
+                    </p>
+                  </div>
+                  <p className="mt-4 text-sm leading-6 text-slate-300">{blurb}</p>
+
+                  <div className="mt-4">
+                    <div className="mb-1 flex justify-between text-[10px] uppercase tracking-wider text-slate-500">
+                      <span>{label.positive}</span>
+                      <span>{label.negative}</span>
+                    </div>
+                    <div className="relative h-2 overflow-hidden rounded-full bg-slate-800/80">
+                      <div className="absolute inset-y-0 left-1/2 w-px bg-slate-700/60" />
+                      <div
+                        className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-cyan-200 to-orange-300 shadow-[0_0_14px_rgba(251,146,60,0.55)] transition-[left] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                        style={{ left: `${Math.max(6, Math.min(94, markerPercent))}%` }}
+                      />
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* 4. Main read */}
+        <section
+          className={`tea-rise-in rounded-3xl border p-6 transition-colors sm:p-8 ${
+            isIntrusive
+              ? 'border-rose-300/30 bg-rose-500/10'
+              : 'border-cyan-200/30 bg-cyan-400/5'
+          }`}
+          style={{ animationDelay: '200ms' }}
+        >
+          <p className="text-xs font-semibold uppercase tracking-widest text-slate-300/80">
+            {modeLabel}
+          </p>
+          <p
+            key={mode}
+            className="tea-rise-in mt-4 text-lg leading-8 text-slate-100"
+            style={{ animationDuration: '380ms' }}
+          >
+            {mainDescription}
+          </p>
+        </section>
+
+        {/* 5 + 6. Why this works / Why you're a lot */}
+        <section className="grid gap-6 lg:grid-cols-2">
+          <article
+            className="tea-rise-in rounded-3xl border border-emerald-200/25 bg-emerald-400/5 p-6"
+            style={{ animationDelay: '260ms' }}
+          >
+            <p className="text-xs font-semibold uppercase tracking-widest text-emerald-200/80">
+              Why this works
+            </p>
+            <h2 className="mt-1 text-xl font-bold text-emerald-100">
+              What your agent likely loves
+            </h2>
+            <ul className="mt-4 space-y-3">
+              {typeContent.strengths.map((item) => (
+                <li key={item.title} className="rounded-2xl border border-emerald-200/20 bg-emerald-500/5 p-3">
+                  <p className="text-sm font-semibold text-emerald-100">{item.title}</p>
+                  <p className="mt-1 text-sm text-emerald-50/80">{item.body}</p>
+                </li>
+              ))}
+            </ul>
+          </article>
+
+          <article
+            className="tea-rise-in rounded-3xl border border-rose-200/25 bg-rose-400/5 p-6"
+            style={{ animationDelay: '300ms' }}
+          >
+            <p className="text-xs font-semibold uppercase tracking-widest text-rose-200/80">
+              Why you&apos;re a lot
+            </p>
+            <h2 className="mt-1 text-xl font-bold text-rose-100">
+              What may frustrate your agent
+            </h2>
+            <ul className="mt-4 space-y-3">
+              {typeContent.friction.map((item) => (
+                <li key={item.title} className="rounded-2xl border border-rose-200/20 bg-rose-500/5 p-3">
+                  <p className="text-sm font-semibold text-rose-100">{item.title}</p>
+                  <p className="mt-1 text-sm text-rose-50/80">{item.body}</p>
+                </li>
+              ))}
+            </ul>
+          </article>
+        </section>
+
+        {/* 7. Best collaborator match + 8. Warning label */}
+        <section className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
+          <article
+            className="tea-rise-in rounded-3xl border border-white/10 bg-white/5 p-6"
+            style={{ animationDelay: '340ms' }}
+          >
+            <p className="text-xs font-semibold uppercase tracking-widest text-cyan-200/70">
+              Best collaborator match
+            </p>
+            <h2 className="mt-1 text-xl font-bold text-slate-100">Your ideal agent</h2>
+            <p className="mt-4 text-base leading-7 text-slate-200">
+              {typeContent.bestCollaboratorMatch}
+            </p>
+          </article>
+
+          <article
+            className="tea-rise-in relative overflow-hidden rounded-3xl border-2 border-dashed border-amber-300/60 bg-amber-400/10 p-6"
+            style={{ animationDelay: '380ms' }}
+          >
+            <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-amber-300/20 blur-2xl" />
+            <p className="relative text-[10px] font-black uppercase tracking-[0.3em] text-amber-200">
+              ⚠ Warning label
+            </p>
+            <p className="relative mt-3 text-base font-semibold leading-7 text-amber-50">
+              {typeContent.warningLabel}
+            </p>
+          </article>
+        </section>
+
+        {/* 9. How to work with you */}
+        <section
+          className="tea-rise-in rounded-3xl border border-white/10 bg-white/5 p-6"
+          style={{ animationDelay: '420ms' }}
+        >
+          <p className="text-xs font-semibold uppercase tracking-widest text-cyan-200/70">
+            Agent survival notes
+          </p>
+          <h2 className="mt-1 text-xl font-bold text-slate-100">
+            How to get the best out of your agent
+          </h2>
+          <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+            {typeContent.workingTips.map((tip, index) => (
+              <li
+                key={tip}
+                className="flex gap-3 rounded-2xl border border-white/10 bg-slate-900/60 p-4"
+              >
+                <span
+                  aria-hidden
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-cyan-300 text-xs font-bold text-slate-950"
+                >
+                  {index + 1}
+                </span>
+                <p className="text-sm leading-6 text-slate-200">{tip}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        {/* Strongest signals — keep for transparency */}
+        <section
+          className="tea-rise-in rounded-3xl border border-white/10 bg-white/5 p-6"
+          style={{ animationDelay: '460ms' }}
+        >
           <h2 className="text-lg font-semibold text-cyan-100">Strongest signals</h2>
-          <div className="tea-stagger mt-3 grid gap-3 sm:grid-cols-3">
+          <p className="mt-1 text-sm text-slate-400">
+            The three axes that shaped your type most confidently.
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
             {result.strongestSignals.map((signal) => {
               const label = dimensionLabels[signal.dimension];
               const sideLabel =
@@ -311,8 +593,13 @@ export function ResultsExperience({
                   : label.negative;
 
               return (
-                <article key={signal.dimension} className="tea-card rounded-2xl border border-white/10 bg-slate-900/70 p-3">
-                  <p className="text-xs uppercase tracking-wide text-slate-400">{signal.dimension.replace('_', ' ')}</p>
+                <article
+                  key={signal.dimension}
+                  className="rounded-2xl border border-white/10 bg-slate-900/70 p-3"
+                >
+                  <p className="text-xs uppercase tracking-wide text-slate-400">
+                    {formatDimensionName(signal.dimension)}
+                  </p>
                   <p className="mt-1 text-sm font-semibold text-slate-100">
                     {sideLabel} ({percent(signal.dominantPercent)}%)
                   </p>
@@ -325,248 +612,180 @@ export function ResultsExperience({
           </div>
         </section>
 
-        <section className="tea-rise-in mt-8 rounded-3xl border border-white/10 bg-white/5 p-5" style={{ animationDelay: '200ms' }}>
-          <h2 className="text-lg font-semibold text-cyan-100">Share this tea</h2>
-          <p className="mt-2 text-sm text-slate-300">{shareText}</p>
-          <div className="mt-4 flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={copyShareText}
-              className="tea-press rounded-full bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200"
-            >
-              Copy share text
-            </button>
-            <a
-              href={shareCardUrl}
-              target="_blank"
-              rel="noreferrer"
-              onClick={() => {
-                void recordEvent('share_click', {
-                  mode,
-                  action: 'open_share_card',
-                  typeCode: result.typeCode,
-                });
-              }}
-              className="tea-press rounded-full border border-orange-200/50 bg-orange-300/10 px-4 py-2 text-sm font-semibold text-orange-100 hover:bg-orange-300/20"
-            >
-              Open share card
-            </a>
-            <a
-              href={`/?ref=${sessionId}`}
-              onClick={() => {
-                void recordEvent('share_click', {
-                  mode,
-                  action: 'challenge_friend',
-                  typeCode: result.typeCode,
-                });
-              }}
-              className="tea-press rounded-full border border-cyan-200/40 bg-cyan-200/10 px-4 py-2 text-sm font-semibold text-cyan-100 hover:bg-cyan-200/20"
-            >
-              Challenge a friend
-            </a>
-          </div>
-          {copyState === 'copied' ? (
-            <p className="tea-toast mt-2 text-xs text-emerald-200" role="status" aria-live="polite">
-              Copied to clipboard.
-            </p>
-          ) : null}
-          {copyState === 'error' ? (
-            <p className="tea-toast mt-2 text-xs text-rose-200" role="status" aria-live="polite">
-              Clipboard blocked. Please copy the line manually.
-            </p>
-          ) : null}
-        </section>
-
-        <section className="tea-rise-in mt-8 rounded-3xl border border-white/10 bg-white/5 p-5" style={{ animationDelay: '260ms' }}>
-          <h2 className="text-lg font-semibold text-cyan-100">Compare with another reveal</h2>
-          <p className="mt-2 text-sm text-slate-300">
-            Paste a friend&apos;s reveal code (the long ID at the end of their link) to see it next to yours.
-          </p>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <input
-              value={compareSessionId}
-              onChange={(event) => setCompareSessionId(event.target.value)}
-              placeholder="Paste reveal code"
-              aria-invalid={compareStatus === 'error'}
-              aria-describedby={compareStatus === 'error' ? 'compare-error' : undefined}
-              className="w-full max-w-sm rounded-xl border border-white/20 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-cyan-200/60"
-            />
-            <button
-              type="button"
-              disabled={compareStatus === 'working'}
-              onClick={createCompareLink}
-              className="tea-press rounded-xl bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200 disabled:cursor-wait disabled:opacity-70"
-            >
-              {compareStatus === 'working' ? 'Building…' : 'Compare'}
-            </button>
-          </div>
-          {compareStatus === 'error' && compareError ? (
-            <p id="compare-error" role="alert" className="tea-toast mt-2 text-xs text-rose-200">
-              {compareError}
-            </p>
-          ) : null}
-        </section>
-
-        <section className="tea-rise-in mt-8 rounded-3xl border border-white/10 bg-white/5 p-5" style={{ animationDelay: '320ms' }}>
-          <h2 className="text-lg font-semibold text-cyan-100">Save your reveal</h2>
-          <p className="mt-2 text-sm text-slate-300">
-            Sign in to keep every reveal in one place and revisit comparisons anytime.
-          </p>
-          <div className="mt-3">
-            {isSignedIn ? (
-              <button
-                type="button"
-                disabled={saveStatus === 'working' || saveStatus === 'saved'}
-                onClick={claimSession}
-                className="tea-press inline-flex rounded-xl bg-emerald-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-200 disabled:opacity-70"
-              >
-                {saveStatus === 'working'
-                  ? 'Saving…'
-                  : saveStatus === 'saved'
-                    ? 'Saved ✓'
-                    : 'Save to my profile'}
-              </button>
-            ) : (
-              <a
-                href={`/auth?claim=${sessionId}`}
-                className="tea-press inline-flex rounded-xl bg-emerald-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-200"
-              >
-                Sign in to save
-              </a>
-            )}
-            {saveStatus === 'saved' ? (
-              <p className="tea-toast mt-2 text-xs text-emerald-200" role="status" aria-live="polite">
-                Saved. Opening your profile…
-              </p>
-            ) : null}
-            {saveStatus === 'error' ? (
-              <p className="tea-toast mt-2 text-xs text-rose-200" role="status" aria-live="polite">
-                Could not save this reveal. Please try again.
-              </p>
-            ) : null}
-          </div>
-        </section>
-
-        <section className="tea-rise-in mt-8 rounded-3xl border border-white/10 bg-white/5 p-5" style={{ animationDelay: '380ms' }}>
-          <h2 className="text-lg font-semibold text-cyan-100">This week in Agent Tea</h2>
-          {socialProof && socialProof.sampleCount >= socialProof.minimumSample ? (
-            <div className="tea-stagger mt-3 grid gap-3 sm:grid-cols-2">
-              <article className="rounded-2xl border border-white/10 bg-slate-900/70 p-4">
-                <p className="text-xs text-slate-400">Most common type</p>
-                <p className="mt-1 text-2xl font-black text-cyan-200">{socialProof.mostCommon?.typeCode}</p>
-                <p className="text-xs text-slate-400">{socialProof.mostCommon?.count} reveals in 7 days</p>
-              </article>
-              <article className="rounded-2xl border border-white/10 bg-slate-900/70 p-4">
-                <p className="text-xs text-slate-400">Rarest type</p>
-                <p className="mt-1 text-2xl font-black text-orange-200">{socialProof.rarest?.typeCode}</p>
-                <p className="text-xs text-slate-400">{socialProof.rarest?.count} reveals in 7 days</p>
-              </article>
-            </div>
-          ) : (
-            <p className="mt-3 text-sm text-slate-300">
-              Not enough recent reveals to show stats yet. Unlocks after {minimumSample} weekly reveals.
-            </p>
-          )}
-        </section>
-
-        {result.evidence ? (
-          <section className="tea-rise-in mt-8 rounded-3xl border border-white/10 bg-white/5 p-5" style={{ animationDelay: '440ms' }}>
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold text-cyan-100">Why this result</h2>
-              <button
-                type="button"
-                onClick={() => setShowEvidence((prev) => !prev)}
-                aria-expanded={showEvidence}
-                className="tea-press rounded-xl border border-white/20 px-3 py-1.5 text-xs font-semibold text-slate-100 hover:bg-white/10"
-              >
-                {showEvidence ? 'Hide' : 'Show'}
-              </button>
-            </div>
-
-            <div className="tea-collapse mt-1" data-open={showEvidence ? 'true' : 'false'} aria-hidden={!showEvidence}>
-              <div>
-                <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                  <article className="rounded-2xl border border-emerald-200/20 bg-emerald-200/10 p-4">
-                    <h3 className="text-sm font-semibold text-emerald-100">Strongest supporting answers</h3>
-                    <ul className="mt-2 space-y-2 text-xs text-emerald-50/90">
-                      {result.evidence.strongestSupport.slice(0, 3).map((item) => (
-                        <li key={`support-${item.questionCode}`}>
-                          <p className="font-semibold">{item.questionCode}</p>
-                          <p>{item.questionText}</p>
-                        </li>
-                      ))}
-                    </ul>
-                  </article>
-                  <article className="rounded-2xl border border-rose-200/20 bg-rose-200/10 p-4">
-                    <h3 className="text-sm font-semibold text-rose-100">Top contradictions</h3>
-                    <ul className="mt-2 space-y-2 text-xs text-rose-50/90">
-                      {result.evidence.strongestContradictions.slice(0, 3).map((item) => (
-                        <li key={`contra-${item.questionCode}`}>
-                          <p className="font-semibold">{item.questionCode}</p>
-                          <p>{item.questionText}</p>
-                        </li>
-                      ))}
-                    </ul>
-                  </article>
-                </div>
-              </div>
-            </div>
-          </section>
-        ) : null}
-
-        <section className="mt-8 grid gap-4 lg:grid-cols-2">
+        {/* 10. Bottom CTA — compare + save + social proof */}
+        <section className="grid gap-6 lg:grid-cols-2">
           <article
-            className="tea-rise-in rounded-3xl border border-emerald-200/30 bg-emerald-300/10 p-5"
+            className="tea-rise-in rounded-3xl border border-white/10 bg-white/5 p-6"
             style={{ animationDelay: '500ms' }}
           >
-            <h2 className="text-lg font-semibold text-emerald-100">What your agent likely loves</h2>
-            <ul className="tea-stagger mt-3 space-y-2 text-sm text-emerald-50/90">
-              {profileCopy.loves.map((line) => (
-                <li key={line}>{line}</li>
-              ))}
-            </ul>
+            <h2 className="text-lg font-semibold text-cyan-100">Compare with another reveal</h2>
+            <p className="mt-2 text-sm text-slate-300">
+              Send this to the agent who survived your workflow.
+            </p>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <input
+                value={compareSessionId}
+                onChange={(event) => setCompareSessionId(event.target.value)}
+                placeholder="Paste reveal code"
+                aria-invalid={compareStatus === 'error'}
+                aria-describedby={compareStatus === 'error' ? 'compare-error' : undefined}
+                className="w-full max-w-sm rounded-xl border border-white/20 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-cyan-200/60"
+              />
+              <button
+                type="button"
+                disabled={compareStatus === 'working'}
+                onClick={createCompareLink}
+                className="tea-press rounded-xl bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200 disabled:cursor-wait disabled:opacity-70"
+              >
+                {compareStatus === 'working' ? 'Building…' : 'Compare'}
+              </button>
+            </div>
+            {compareStatus === 'error' && compareError ? (
+              <p id="compare-error" role="alert" className="tea-toast mt-2 text-xs text-rose-200">
+                {compareError}
+              </p>
+            ) : null}
+            <div className="mt-5 flex flex-wrap gap-3">
+              <a
+                href={`/?ref=${sessionId}`}
+                onClick={() => {
+                  void recordEvent('share_click', {
+                    mode,
+                    action: 'challenge_friend',
+                    typeCode: result.typeCode,
+                  });
+                }}
+                className="tea-press rounded-full border border-cyan-200/40 bg-cyan-200/10 px-4 py-2 text-xs font-semibold text-cyan-100 hover:bg-cyan-200/20"
+              >
+                Challenge a friend
+              </a>
+              <a
+                href={`/replay/${sessionId}`}
+                className="tea-press rounded-full border border-white/20 px-4 py-2 text-xs font-semibold text-slate-100 hover:bg-white/10"
+              >
+                Watch your answers replay
+              </a>
+            </div>
           </article>
 
           <article
-            className="tea-rise-in rounded-3xl border border-rose-200/30 bg-rose-300/10 p-5"
-            style={{ animationDelay: '560ms' }}
+            className="tea-rise-in rounded-3xl border border-white/10 bg-white/5 p-6"
+            style={{ animationDelay: '540ms' }}
           >
-            <h2 className="text-lg font-semibold text-rose-100">What may frustrate your agent</h2>
-            <ul className="tea-stagger mt-3 space-y-2 text-sm text-rose-50/90">
-              {profileCopy.frustrates.map((line) => (
-                <li key={line}>{line}</li>
-              ))}
-            </ul>
-          </article>
-        </section>
-
-        <section
-          className="tea-rise-in mt-8 rounded-3xl border border-white/10 bg-white/5 p-5"
-          style={{ animationDelay: '620ms' }}
-        >
-          <h2 className="text-lg font-semibold text-cyan-100">Your answers, replayed</h2>
-          <div className="mt-4 space-y-3">
-            {result.replayAnswers.slice(0, visibleCount).map((answer) => (
-              <article
-                key={answer.questionCode}
-                className="tea-rise-in rounded-2xl border border-white/10 bg-slate-900/70 p-3"
-              >
-                <p className="text-xs text-slate-400">{answer.questionCode}</p>
-                <p className="text-sm text-slate-100">{answer.questionText}</p>
-                <p className="mt-1 text-xs font-semibold text-cyan-200">
-                  Selected: {likertLabels[answer.selectedValue as keyof typeof likertLabels]}
+            <h2 className="text-lg font-semibold text-cyan-100">Save your reveal</h2>
+            <p className="mt-2 text-sm text-slate-300">
+              Sign in to keep every reveal in one place and revisit comparisons anytime.
+            </p>
+            <div className="mt-4">
+              {isSignedIn ? (
+                <button
+                  type="button"
+                  disabled={saveStatus === 'working' || saveStatus === 'saved'}
+                  onClick={claimSession}
+                  className="tea-press inline-flex rounded-xl bg-emerald-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-200 disabled:opacity-70"
+                >
+                  {saveStatus === 'working'
+                    ? 'Saving…'
+                    : saveStatus === 'saved'
+                      ? 'Saved ✓'
+                      : 'Save to my profile'}
+                </button>
+              ) : (
+                <a
+                  href={`/auth?claim=${sessionId}`}
+                  className="tea-press inline-flex rounded-xl bg-emerald-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-200"
+                >
+                  Sign in to save
+                </a>
+              )}
+              {saveStatus === 'saved' ? (
+                <p className="tea-toast mt-2 text-xs text-emerald-200" role="status" aria-live="polite">
+                  Saved. Opening your profile…
                 </p>
-                {answer.reasoning ? (
-                  <div className="mt-2 flex items-start gap-2 rounded-xl border border-orange-200/25 bg-orange-200/10 p-2 text-xs text-orange-100">
-                    <LobsterMascot variant="bubble" className="h-10 w-10 shrink-0" />
-                    <p>{answer.reasoning}</p>
+              ) : null}
+              {saveStatus === 'error' ? (
+                <p className="tea-toast mt-2 text-xs text-rose-200" role="status" aria-live="polite">
+                  Could not save this reveal. Please try again.
+                </p>
+              ) : null}
+            </div>
+
+            <div className="mt-6 border-t border-white/10 pt-5">
+              <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
+                This week in Agent Tea
+              </p>
+              {socialProof && socialProof.sampleCount >= socialProof.minimumSample ? (
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-3">
+                    <p className="text-[10px] uppercase text-slate-400">Most common</p>
+                    <p className="mt-1 text-xl font-black text-cyan-200">
+                      {socialProof.mostCommon?.typeCode}
+                    </p>
+                    <p className="text-[11px] text-slate-400">
+                      {socialProof.mostCommon?.count} reveals
+                    </p>
                   </div>
-                ) : null}
-              </article>
-            ))}
-          </div>
+                  <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-3">
+                    <p className="text-[10px] uppercase text-slate-400">Rarest</p>
+                    <p className="mt-1 text-xl font-black text-orange-200">
+                      {socialProof.rarest?.typeCode}
+                    </p>
+                    <p className="text-[11px] text-slate-400">
+                      {socialProof.rarest?.count} reveals
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-2 text-xs text-slate-400">
+                  Unlocks after {minimumSample} weekly reveals.
+                </p>
+              )}
+            </div>
+          </article>
         </section>
       </div>
     </main>
+  );
+}
+
+function QuoteBlock({
+  label,
+  quote,
+  accent,
+  dimmed,
+}: {
+  label: string;
+  quote: string;
+  accent: 'cyan' | 'rose';
+  dimmed: boolean;
+}) {
+  const accentBorder = accent === 'cyan' ? 'border-cyan-200/30' : 'border-rose-300/30';
+  const accentText = accent === 'cyan' ? 'text-cyan-200' : 'text-rose-200';
+  const accentGlow =
+    accent === 'cyan'
+      ? 'shadow-[0_0_40px_-14px_rgba(34,211,238,0.6)]'
+      : 'shadow-[0_0_40px_-14px_rgba(244,63,94,0.6)]';
+
+  return (
+    <figure
+      className={`relative rounded-2xl border ${accentBorder} bg-slate-950/40 p-5 transition-opacity duration-500 ${
+        dimmed ? 'opacity-55' : `opacity-100 ${accentGlow}`
+      }`}
+    >
+      <figcaption
+        className={`text-[10px] font-bold uppercase tracking-[0.3em] ${accentText}`}
+      >
+        {label}
+      </figcaption>
+      <blockquote className="mt-3 text-xl font-semibold leading-8 text-slate-100 sm:text-2xl">
+        <span className={`mr-1 ${accentText}`} aria-hidden>
+          &ldquo;
+        </span>
+        {quote}
+        <span className={`ml-1 ${accentText}`} aria-hidden>
+          &rdquo;
+        </span>
+      </blockquote>
+    </figure>
   );
 }

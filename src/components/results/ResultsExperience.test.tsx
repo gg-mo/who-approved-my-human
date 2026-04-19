@@ -1,5 +1,5 @@
-import { act, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
 
 import { ResultsExperience } from '@/components/results/ResultsExperience';
 
@@ -72,10 +72,6 @@ const baseResult = {
   ],
 };
 
-afterEach(() => {
-  vi.useRealTimers();
-});
-
 describe('ResultsExperience', () => {
   it('renders primary result sections', () => {
     render(<ResultsExperience result={baseResult} sessionId="session-123" />);
@@ -85,19 +81,5 @@ describe('ResultsExperience', () => {
     expect(screen.getByText(/what may frustrate your agent/i)).toBeInTheDocument();
     expect(screen.getByText(/strongest signals/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /devil mode/i })).toBeInTheDocument();
-  });
-
-  it('reveals animated answer replay entries over time', async () => {
-    vi.useFakeTimers();
-    render(<ResultsExperience result={baseResult} sessionId="session-123" />);
-
-    expect(screen.queryByText(/my human usually gives enough context/i)).not.toBeInTheDocument();
-
-    await act(async () => {
-      vi.advanceTimersByTime(300);
-    });
-
-    expect(screen.getByText(/my human usually gives enough context/i)).toBeInTheDocument();
-    expect(screen.getByText(/there was a time my human gave me exact constraints/i)).toBeInTheDocument();
   });
 });
