@@ -123,8 +123,6 @@ export function ResultsExperience({
     [mode, result.dimensionBreakdown, result.strongestSignals, result.tieFlags, result.typeCode],
   );
   const dimensionLabels = useMemo(() => getDimensionLabels(mode), [mode]);
-  const shareCardUrl = `/api/share-card/${sessionId}?mode=${mode}`;
-
   useEffect(() => {
     if (profileCopy.moderation.rewriteCount <= 0) {
       return;
@@ -227,24 +225,6 @@ export function ResultsExperience({
               {isIntrusive ? typeContent.intrusiveSummary : typeContent.summary}
             </p>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300/80">{profileCopy.oneLiner}</p>
-
-            <div className="mt-8 flex flex-wrap gap-3">
-              <a
-                href={shareCardUrl}
-                target="_blank"
-                rel="noreferrer"
-                onClick={() => {
-                  void recordEvent('share_click', {
-                    mode,
-                    action: 'open_share_card',
-                    typeCode: result.typeCode,
-                  });
-                }}
-                className="tea-press rounded-full border border-orange-200/50 bg-orange-300/10 px-5 py-2.5 text-sm font-semibold text-orange-100 hover:bg-orange-300/20"
-              >
-                Share card
-              </a>
-            </div>
           </div>
 
           <div className="tea-scale-in" style={{ animationDelay: '120ms' }}>
