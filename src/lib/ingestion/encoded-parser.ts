@@ -27,8 +27,27 @@ const VALUE_RANGE = Array.from(
   (_, i) => LIKERT_SCALE.MIN + i,
 );
 
+function extractPayloadLine(raw: string): string {
+  // Chatbots often wrap the payload with prose like "Paste this back into Agent Tea".
+  // Isolate just the AT1| line so surrounding text doesn't pollute the token stream.
+  const match = raw.match(/AT1\s*\|[^\n\r]*/i);
+  if (match) {
+    return match[0];
+  }
+  // Fallback: if there's no prefix, take the longest line that contains Q-digit tokens.
+  const lines = raw.split(/[\n\r]+/).map((line) => line.trim()).filter(Boolean);
+  const tokenLine = lines
+    .filter((line) => /Q\s*\d{1,2}\s*[-:=_]\s*\d/i.test(line))
+    .sort((a, b) => b.length - a.length)[0];
+  return tokenLine ?? raw;
+}
+
 function normalizePayload(raw: string): string {
-  return raw.trim().replace(/\s+/g, '').replace(/:+|=+|_+/g, '-').replace(/a/gi, 'A');
+  return extractPayloadLine(raw)
+    .trim()
+    .replace(/\s+/g, '')
+    .replace(/:+|=+|_+/g, '-')
+    .replace(/a/gi, 'A');
 }
 
 function toToken(rawToken: string): string {

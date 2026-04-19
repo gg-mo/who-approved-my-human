@@ -50,7 +50,7 @@ Use the full range. A distinctive human deserves a distinctive profile.
 
 ## Output format
 
-Return **one single encoded line, nothing else** — no greeting, no explanation, no code fence:
+Return **only the one encoded line. Nothing else.** No greeting, no explanation, no code fence, no trailing sentence, no "paste this back" instructions. Any extra text — even a friendly closer — makes the payload harder to parse and annoys the human.
 
 ```
 AT1|Q01-4AQ02-2AQ03-5...Q32-3
@@ -69,4 +69,4 @@ Full example (all 32 answers):
 AT1|Q01-5AQ02-2AQ03-4AQ04-1AQ05-5AQ06-4AQ07-2AQ08-4AQ09-2AQ10-1AQ11-5AQ12-4AQ13-2AQ14-5AQ15-4AQ16-2AQ17-4AQ18-1AQ19-2AQ20-4AQ21-2AQ22-5AQ23-3AQ24-2AQ25-3AQ26-4AQ27-4AQ28-4AQ29-5AQ30-2AQ31-4AQ32-2
 ```
 
-After you output the line, tell the human to paste it back into Agent Tea — that's all they need to do to see their reveal.
+Do not say anything before or after the line. The human already knows what to do with it.
