@@ -274,12 +274,12 @@ function ReplayStep({
                 : 'pointer-events-none opacity-0 translate-y-2'
             }`}
           >
-            <div className="relative rounded-2xl border border-orange-200/20 bg-orange-200/[0.06] p-3 sm:p-4">
+            <div className="relative rounded-[22px] border border-white/15 bg-gradient-to-br from-white/[0.09] via-white/[0.05] to-white/[0.02] px-4 py-3 shadow-[0_12px_40px_-16px_rgba(255,140,110,0.4)] backdrop-blur sm:px-5 sm:py-4">
               <span
                 aria-hidden
-                className="absolute -left-2 top-5 h-3 w-3 rotate-45 rounded-[2px] border-b border-l border-orange-200/20 bg-orange-200/[0.06] lg:left-1/2 lg:top-auto lg:-top-2 lg:-translate-x-1/2 lg:rotate-[225deg]"
+                className="absolute -left-1.5 top-6 h-3 w-3 rotate-45 rounded-sm border-b border-l border-white/15 bg-white/[0.07] lg:left-1/2 lg:top-auto lg:-top-1.5 lg:-translate-x-1/2 lg:rotate-[225deg]"
               />
-              <p className="text-xs leading-5 text-orange-50/95 sm:text-sm sm:leading-6">
+              <p className="text-[0.8rem] leading-6 text-slate-100/95 sm:text-[0.9rem] sm:leading-7">
                 {typedText}
                 {phase === 'bubble' && typedText.length < (step.reasoning ?? '').length ? (
                   <span className="tea-caret ml-0.5 inline-block h-3 w-[2px] translate-y-0.5 bg-orange-200" />
