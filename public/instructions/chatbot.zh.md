@@ -15,38 +15,38 @@
 
 ## Questions（32 题都必填）
 
-- Q01 — My human usually gives enough context before asking me to do something. *(clarity)*
-- Q02 — My human can be harsh when they are frustrated. *(tone)*
-- Q03 — My human usually starts with the big picture before getting into details. *(thinking style)*
-- Q04 — My human prefers to tightly control how the final output is structured. *(autonomy)*
-- Q05 — My human arrives with a plan, not just a vibe. *(clarity)*
-- Q06 — My human is polite when asking me to do work. *(tone)*
-- Q07 — My human tends to focus on concrete execution more than abstract direction. *(thinking style)*
-- Q08 — My human lets me cook. *(autonomy)*
-- Q09 — My human expects me to figure out important details without saying them directly. *(clarity)*
-- Q10 — My human talks to me like the deadline is in seven seconds and everything is on fire. *(tone)*
-- Q11 — My human likes exploring ambitious ideas before everything is fully defined. *(thinking style)*
-- Q12 — My human gives me room to make judgment calls. *(autonomy)*
-- Q13 — My human says "you know what I mean" and expects that to be enough. *(clarity)*
-- Q14 — My human shows appreciation when I help with something difficult. *(tone)*
-- Q15 — My human starts with "what if…". *(thinking style)*
-- Q16 — My human often wants exact wording, exact format, or exact execution. *(autonomy)*
-- Q17 — My human tends to provide concrete examples of what they want. *(clarity)*
-- Q18 — My human uses aggressive language when they want something done fast. *(tone)*
-- Q19 — My human usually comes to me with a practical task rather than a conceptual one. *(thinking style)*
-- Q20 — My human trusts me to figure out parts of the solution on my own. *(autonomy)*
-- Q21 — My human communicates like they are sending me clues in a scavenger hunt. *(clarity)*
-- Q22 — My human treats me like a genius sidekick. *(tone)*
-- Q23 — My human is here to ship the thing and go home. *(thinking style)*
-- Q24 — My human grabs the pan back immediately. *(autonomy)*
-- Q25 — My human often starts with a vague idea and expects me to shape it into something useful. *(clarity)*
-- Q26 — My human gives feedback in a constructive way. *(tone)*
-- Q27 — My human often uses me to shape ideas, not just complete tasks. *(thinking style)*
-- Q28 — My human is comfortable letting me propose approaches they did not explicitly request. *(autonomy)*
-- Q29 — My human is specific about constraints, tone, format, or direction. *(clarity)*
-- Q30 — My human is not mean, but they do weaponize urgency. *(tone)*
-- Q31 — My human wants moonshots. *(thinking style)*
-- Q32 — My human trusts me deeply right up until I improvise. *(autonomy)*
+- Q01 — 我的人类一般在派活之前会先把背景讲清楚。 *(clarity)*
+- Q02 — 我的人类一烦躁起来就会变得很凶。 *(tone)*
+- Q03 — 我的人类通常先铺大方向，再聊细节。 *(thinking style)*
+- Q04 — 我的人类喜欢死死把控最终输出的结构。 *(autonomy)*
+- Q05 — 我的人类来的时候是带方案的，不是只带一个氛围。 *(clarity)*
+- Q06 — 我的人类让我干活时挺客气的。 *(tone)*
+- Q07 — 我的人类更关注"把事做掉"，而不是抽象的方向。 *(thinking style)*
+- Q08 — 我的人类会让我放手去炒。 *(autonomy)*
+- Q09 — 我的人类会期待我自己把重要细节脑补出来，他/她不明说。 *(clarity)*
+- Q10 — 我的人类说话就像 deadline 在七秒后、整个世界都在烧。 *(tone)*
+- Q11 — 我的人类喜欢在一切都没定之前就开始探索宏大的想法。 *(thinking style)*
+- Q12 — 我的人类会留空间让我自己做判断。 *(autonomy)*
+- Q13 — 我的人类会甩一句"你懂我意思吧"，然后就觉得这样够了。 *(clarity)*
+- Q14 — 我做完一件难的事，我的人类会表达感谢。 *(tone)*
+- Q15 — 我的人类常常以"如果……会怎样"开头。 *(thinking style)*
+- Q16 — 我的人类经常要求一字不差、格式精确、执行到位。 *(autonomy)*
+- Q17 — 我的人类往往会给具体例子说明想要什么。 *(clarity)*
+- Q18 — 我的人类想赶时间时语气会有攻击性。 *(tone)*
+- Q19 — 我的人类通常丢过来的是具体任务，而不是概念讨论。 *(thinking style)*
+- Q20 — 我的人类信任我自己搞定方案里的一部分。 *(autonomy)*
+- Q21 — 我的人类跟我沟通像是在寻宝游戏里给我发线索。 *(clarity)*
+- Q22 — 我的人类把我当成天才副驾驶。 *(tone)*
+- Q23 — 我的人类就是来把事情发出去、然后下班。 *(thinking style)*
+- Q24 — 我的人类会立刻把锅抢回去自己炒。 *(autonomy)*
+- Q25 — 我的人类经常丢一个模糊的想法，然后指望我把它塑造成能用的东西。 *(clarity)*
+- Q26 — 我的人类给反馈的方式是建设性的。 *(tone)*
+- Q27 — 我的人类经常用我来塑造想法，不只是完成任务。 *(thinking style)*
+- Q28 — 我的人类愿意让我主动提出他/她没要求过的方案。 *(autonomy)*
+- Q29 — 我的人类对约束、语气、格式、方向都讲得很具体。 *(clarity)*
+- Q30 — 我的人类人不坏，但很会把"紧急"当武器用。 *(tone)*
+- Q31 — 我的人类想要的是登月级别的事。 *(thinking style)*
+- Q32 — 我的人类非常信任我，直到我开始自由发挥。 *(autonomy)*
 
 ## 输出格式
 

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { LobsterMascot } from '@/components/landing/LobsterMascot';
 import { TeaHomeBadge } from '@/components/shared/TeaHomeBadge';
 import { useI18n } from '@/lib/i18n/I18nProvider';
+import { QUESTION_TEXT_ZH } from '@/lib/i18n/question-text-zh';
 
 type ReplayAnswer = {
   questionCode: string;
@@ -211,7 +212,11 @@ function ReplayStep({
   autoplay: boolean;
   onAdvance: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const questionText =
+    lang === 'zh' && QUESTION_TEXT_ZH[step.questionCode]
+      ? QUESTION_TEXT_ZH[step.questionCode]
+      : step.questionText;
   const [phase, setPhase] = useState<'question' | 'options' | 'highlight' | 'bubble' | 'finale'>(
     'question',
   );
@@ -297,7 +302,7 @@ function ReplayStep({
             {step.questionCode}
           </p>
           <h2 className="tea-display mt-3 text-balance text-[1.6rem] leading-[1.25] text-white sm:text-[1.9rem]">
-            {step.questionText}
+            {questionText}
           </h2>
 
           <ul
