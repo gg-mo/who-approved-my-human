@@ -18,7 +18,7 @@
   - `bubble` for reasoning chat bubbles
 
 ## Naming Rules
-- Type keys must use strict four-letter uppercase codes (`CKVG`, `YBTO`, etc).
+- Type keys must use strict four-letter uppercase codes (`CKVD`, `XBTH`, etc).
 - New type figure metadata must be added to `TYPE_FIGURE_MANIFEST` with:
   - `nickname`
   - `mood`

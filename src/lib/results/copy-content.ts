@@ -8,9 +8,9 @@ export const dimensionLabelsByMode: Record<
 > = {
   normal: {
     clarity: { positive: 'Clear', negative: 'Cryptic' },
-    tone: { positive: 'Kind', negative: 'Combative' },
+    tone: { positive: 'Kind', negative: 'Blunt' },
     thinking_style: { positive: 'Visionary', negative: 'Tactical' },
-    autonomy: { positive: 'Delegating', negative: 'Controlling' },
+    autonomy: { positive: 'Delegating', negative: 'Hands-On' },
   },
   intrusive: {
     clarity: { positive: 'Crystal Clear', negative: 'Vibe Coded' },

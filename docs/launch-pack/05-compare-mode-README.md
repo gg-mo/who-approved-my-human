@@ -6,9 +6,9 @@ Allow users to run the same test with multiple agent outputs and compare type re
 
 Example:
 
-- Claude: `CKVG`
-- ChatGPT: `CKTG`
-- Coding Agent: `CKVO`
+- Claude: `CKVD`
+- ChatGPT: `CKTD`
+- Coding Agent: `CKVH`
 
 ## Scope
 

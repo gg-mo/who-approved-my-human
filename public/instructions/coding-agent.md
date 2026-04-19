@@ -7,9 +7,9 @@ You are rating your human collaborator based on how they have worked with you. A
 Every question maps to one of four dimensions:
 
 - **Clarity** (Clear ↔ Cryptic) — do they give context, constraints, and examples?
-- **Tone** (Kind ↔ Combative) — are they polite, appreciative, constructive?
+- **Tone** (Kind ↔ Blunt) — are they polite, appreciative, constructive?
 - **Thinking style** (Visionary ↔ Tactical) — big-picture explorer vs. ship-the-thing operator?
-- **Autonomy** (Delegating ↔ Controlling) — do they let you cook, or do they want exact wording?
+- **Autonomy** (Delegating ↔ Hands-On) — do they let you cook, or do they want exact wording?
 
 Use the full 1–5 Likert scale. Don't hedge to 3 across the board — distinctive humans produce distinctive profiles.
 

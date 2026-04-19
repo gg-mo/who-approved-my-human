@@ -4,12 +4,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ResultsExperience } from '@/components/results/ResultsExperience';
 
 const baseResult = {
-  typeCode: 'CKVG',
+  typeCode: 'CKVD',
   dimensionBreakdown: {
     clarity: {
       dominantLetter: 'C',
       positiveLetter: 'C',
-      negativeLetter: 'Y',
+      negativeLetter: 'X',
       positivePercent: 0.78,
       negativePercent: 0.22,
     },
@@ -28,9 +28,9 @@ const baseResult = {
       negativePercent: 0.35,
     },
     autonomy: {
-      dominantLetter: 'G',
-      positiveLetter: 'G',
-      negativeLetter: 'O',
+      dominantLetter: 'D',
+      positiveLetter: 'D',
+      negativeLetter: 'H',
       positivePercent: 0.58,
       negativePercent: 0.42,
     },
@@ -80,7 +80,7 @@ describe('ResultsExperience', () => {
   it('renders primary result sections', () => {
     render(<ResultsExperience result={baseResult} sessionId="session-123" />);
 
-    expect(screen.getByRole('heading', { name: 'CKVG' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'CKVD' })).toBeInTheDocument();
     expect(screen.getByText(/what your agent likely loves/i)).toBeInTheDocument();
     expect(screen.getByText(/what may frustrate your agent/i)).toBeInTheDocument();
     expect(screen.getByText(/strongest signals/i)).toBeInTheDocument();

@@ -33,7 +33,7 @@ describe('phase 3/4 session service behavior', () => {
 
     for (let i = 0; i < 10; i += 1) {
       const { session } = await createSession({ intakeMode: 'manual' });
-      await store.upsertResult(session.id, fakePersistedResult('CKVG'));
+      await store.upsertResult(session.id, fakePersistedResult('CKVD'));
     }
 
     const summary = await getTypeDistributionSummary(7);
@@ -49,20 +49,20 @@ describe('phase 3/4 session service behavior', () => {
 
     for (let i = 0; i < 20; i += 1) {
       const { session } = await createSession({ intakeMode: 'manual' });
-      await store.upsertResult(session.id, fakePersistedResult('CKVG'));
+      await store.upsertResult(session.id, fakePersistedResult('CKVD'));
     }
 
     for (let i = 0; i < 4; i += 1) {
       const { session } = await createSession({ intakeMode: 'manual' });
-      await store.upsertResult(session.id, fakePersistedResult('YBTO'));
+      await store.upsertResult(session.id, fakePersistedResult('XBTH'));
     }
 
     const summary = await getTypeDistributionSummary(7);
 
     expect(summary.sampleCount).toBe(24);
-    expect(summary.mostCommon?.typeCode).toBe('CKVG');
+    expect(summary.mostCommon?.typeCode).toBe('CKVD');
     expect(summary.mostCommon?.count).toBe(20);
-    expect(summary.rarest?.typeCode).toBe('YBTO');
+    expect(summary.rarest?.typeCode).toBe('XBTH');
     expect(summary.rarest?.count).toBe(4);
   });
 

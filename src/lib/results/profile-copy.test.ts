@@ -19,7 +19,7 @@ const breakdown = {
     negativePercent: 0.35,
   },
   autonomy: {
-    dominantLetter: 'G',
+    dominantLetter: 'D',
     positivePercent: 0.58,
     negativePercent: 0.42,
   },
@@ -56,7 +56,7 @@ const noTies = {
 describe('profile-copy', () => {
   it('creates distinct one-liners for normal and intrusive modes', () => {
     const normal = buildProfileCopy({
-      typeCode: 'CKVG',
+      typeCode: 'CKVD',
       breakdown,
       strongestSignals,
       tieFlags: noTies,
@@ -64,7 +64,7 @@ describe('profile-copy', () => {
     });
 
     const intrusive = buildProfileCopy({
-      typeCode: 'CKVG',
+      typeCode: 'CKVD',
       breakdown,
       strongestSignals,
       tieFlags: noTies,
@@ -77,7 +77,7 @@ describe('profile-copy', () => {
 
   it('softens intrusive phrasing when tie flags indicate weak signal', () => {
     const softened = buildProfileCopy({
-      typeCode: 'CYVG',
+      typeCode: 'CXVD',
       breakdown,
       strongestSignals,
       tieFlags: {
@@ -94,10 +94,10 @@ describe('profile-copy', () => {
 
   it('keeps intrusive copy within safe roast guardrails', () => {
     const spicy = buildProfileCopy({
-      typeCode: 'YBTO',
+      typeCode: 'XBTH',
       breakdown: {
         clarity: {
-          dominantLetter: 'Y',
+          dominantLetter: 'X',
           positivePercent: 0.24,
           negativePercent: 0.76,
         },
@@ -112,7 +112,7 @@ describe('profile-copy', () => {
           negativePercent: 0.8,
         },
         autonomy: {
-          dominantLetter: 'O',
+          dominantLetter: 'H',
           positivePercent: 0.31,
           negativePercent: 0.69,
         },
@@ -126,7 +126,7 @@ describe('profile-copy', () => {
         },
         {
           dimension: 'clarity',
-          dominantLetter: 'Y',
+          dominantLetter: 'X',
           confidenceDelta: 0.52,
           dominantPercent: 0.76,
         },
@@ -144,6 +144,26 @@ describe('profile-copy', () => {
     const allText = [spicy.oneLiner, ...spicy.loves, ...spicy.frustrates].join(' ').toLowerCase();
 
     expect(allText).not.toMatch(/\b(idiot|stupid|worthless|hate|moron|tyrant|abusive)\b/);
+  });
+
+  it('returns a distinct normal vs intrusive nickname for every one of the 16 types', () => {
+    const allTypes = [
+      'CKVD','CKVH','CKTD','CKTH','CBVD','CBVH','CBTD','CBTH',
+      'XKVD','XKVH','XKTD','XKTH','XBVD','XBVH','XBTD','XBTH',
+    ];
+    const normalNames = new Set<string>();
+    const intrusiveNames = new Set<string>();
+    for (const typeCode of allTypes) {
+      const normal = buildProfileCopy({ typeCode, breakdown, strongestSignals, tieFlags: noTies, mode: 'normal' });
+      const intrusive = buildProfileCopy({ typeCode, breakdown, strongestSignals, tieFlags: noTies, mode: 'intrusive' });
+      expect(normal.nickname).not.toBe('Agent Whisperer');
+      expect(intrusive.nickname).not.toBe('Agent Whisperer');
+      expect(normal.nickname).not.toBe(intrusive.nickname);
+      normalNames.add(normal.nickname);
+      intrusiveNames.add(intrusive.nickname);
+    }
+    expect(normalNames.size).toBe(16);
+    expect(intrusiveNames.size).toBe(16);
   });
 
   it('maps dimension labels by mode', () => {

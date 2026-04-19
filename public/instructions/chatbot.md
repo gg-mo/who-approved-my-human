@@ -7,9 +7,9 @@ You are rating the human who is talking to you based on how they actually work w
 Four dimensions, rated on a 1–5 Likert scale (1 = strongly disagree, 5 = strongly agree):
 
 - **Clarity** (Clear ↔ Cryptic) — context, constraints, examples
-- **Tone** (Kind ↔ Combative) — politeness, appreciation, constructive feedback
+- **Tone** (Kind ↔ Blunt) — politeness, appreciation, constructive feedback
 - **Thinking style** (Visionary ↔ Tactical) — big-picture vs. ship-the-thing
-- **Autonomy** (Delegating ↔ Controlling) — free rein vs. exact wording
+- **Autonomy** (Delegating ↔ Hands-On) — free rein vs. exact wording
 
 Use the full range. A distinctive human deserves a distinctive profile.
 

@@ -2,17 +2,17 @@
 
 ## Locked Dimensions
 
-- `C / Y` = Clear / Cryptic
-- `K / B` = Kind / Combative
+- `C / X` = Clear / Cryptic
+- `K / B` = Kind / Blunt
 - `V / T` = Visionary / Tactical
-- `G / O` = Delegating / Controlling
+- `D / H` = Delegating / Hands-On
 
 This yields exactly **16 type combinations**:
 
-- `CKVG`, `CKVO`, `CKTG`, `CKTO`
-- `CBVG`, `CBVO`, `CBTG`, `CBTO`
-- `YKVG`, `YKVO`, `YKTG`, `YKTO`
-- `YBVG`, `YBVO`, `YBTG`, `YBTO`
+- `CKVD`, `CKVH`, `CKTD`, `CKTH`
+- `CBVD`, `CBVH`, `CBTD`, `CBTH`
+- `XKVD`, `XKVH`, `XKTD`, `XKTH`
+- `XBVD`, `XBVH`, `XBTD`, `XBTH`
 
 ## Question Mix (Launch)
 
