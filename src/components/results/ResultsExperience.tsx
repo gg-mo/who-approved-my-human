@@ -606,25 +606,78 @@ export function ResultsExperience({
             </div>
           </article>
 
-          <article
-            className="tea-rise-in flex flex-col justify-center rounded-3xl border border-white/10 bg-white/5 p-6"
-            style={{ animationDelay: '540ms' }}
-          >
-            <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
-              Tea spilled so far
-            </p>
-            <p className="mt-3 text-5xl font-black text-cyan-200 sm:text-6xl">
-              {socialProof?.sampleCount ?? 0}
-            </p>
-            <p className="mt-2 text-sm text-slate-300">
-              {(socialProof?.sampleCount ?? 0) === 1
-                ? 'cup of tea and counting.'
-                : 'cups of tea and counting.'}
-            </p>
-          </article>
+          <TeaSpilledCard count={socialProof?.sampleCount ?? 0} />
         </section>
       </div>
     </main>
+  );
+}
+
+function TeaSpilledCard({ count }: { count: number }) {
+  const [display, setDisplay] = useState(0);
+
+  useEffect(() => {
+    if (count <= 0) {
+      setDisplay(0);
+      return;
+    }
+    const duration = 900;
+    const start = performance.now();
+    let frame = 0;
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setDisplay(Math.round(eased * count));
+      if (t < 1) {
+        frame = requestAnimationFrame(tick);
+      }
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [count]);
+
+  return (
+    <article
+      className="tea-rise-in relative overflow-hidden rounded-3xl border border-cyan-300/20 bg-gradient-to-br from-cyan-500/10 via-white/5 to-transparent p-6 shadow-[0_0_60px_-24px_rgba(34,211,238,0.5)]"
+      style={{ animationDelay: '540ms' }}
+    >
+      <svg
+        viewBox="0 0 64 64"
+        aria-hidden
+        className="pointer-events-none absolute -right-4 -bottom-4 h-36 w-36 text-cyan-300/25"
+      >
+        <g fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity="0.8">
+          <path d="M24 18 Q 20 12 24 6" />
+          <path d="M34 20 Q 30 14 34 8" />
+          <path d="M44 18 Q 40 12 44 6" />
+        </g>
+        <path
+          d="M12 26 L 16 52 Q 17 58 23 58 L 41 58 Q 47 58 48 52 L 52 26 Z"
+          fill="currentColor"
+          opacity="0.7"
+        />
+        <ellipse cx="32" cy="26" rx="20" ry="2.8" fill="#0f172a" />
+        <path
+          d="M50 32 Q 58 34 56 44 Q 54 48 48 46"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="3"
+          strokeLinecap="round"
+        />
+      </svg>
+      <p className="relative text-xs font-semibold uppercase tracking-widest text-cyan-200/90">
+        Tea spilled so far
+      </p>
+      <p className="relative mt-3 flex items-baseline gap-2 text-6xl font-black tabular-nums text-cyan-100 sm:text-7xl">
+        {display}
+        <span className="text-sm font-semibold uppercase tracking-widest text-slate-400">
+          {count === 1 ? 'cup' : 'cups'}
+        </span>
+      </p>
+      <p className="relative mt-2 text-sm text-slate-300">
+        and still steeping — every session adds to the pot.
+      </p>
+    </article>
   );
 }
 
