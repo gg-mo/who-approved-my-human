@@ -298,7 +298,7 @@ export function LandingEntryCards() {
   }
 
   return (
-    <section className="tea-stagger grid items-stretch gap-5 lg:grid-cols-2">
+    <section className="tea-stagger grid items-start gap-5 lg:grid-cols-2">
       <article
         onClick={() => {
           if (selectedMode === 'coding') {
@@ -309,7 +309,7 @@ export function LandingEntryCards() {
           setSelectedMode('coding');
           setShowChatbotPanel(false);
         }}
-        className={`tea-card relative h-full overflow-hidden rounded-[28px] border p-7 backdrop-blur-xl transition-all ${
+        className={`tea-card relative overflow-hidden rounded-[28px] border p-7 backdrop-blur-xl transition-all ${
           selectedMode === 'coding'
             ? 'border-white/[0.16] bg-white/[0.05] shadow-[0_0_0_1px_rgba(255,255,255,0.06)_inset,0_30px_70px_-30px_rgba(251,146,60,0.45)]'
             : selectedMode === 'chatbot'
@@ -374,7 +374,7 @@ export function LandingEntryCards() {
           }
           setSelectedMode('chatbot');
         }}
-        className={`tea-card relative h-full overflow-hidden rounded-[28px] border p-7 backdrop-blur-xl transition-all ${
+        className={`tea-card relative overflow-hidden rounded-[28px] border p-7 backdrop-blur-xl transition-all ${
           selectedMode === 'chatbot'
             ? 'border-white/[0.16] bg-white/[0.05] shadow-[0_0_0_1px_rgba(255,255,255,0.06)_inset,0_30px_70px_-30px_rgba(34,211,238,0.42)]'
             : selectedMode === 'coding'
