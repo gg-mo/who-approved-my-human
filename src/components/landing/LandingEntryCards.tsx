@@ -227,12 +227,12 @@ export function LandingEntryCards() {
 
   async function copyChatbotFullPrompt() {
     setChatbotCopyError(null);
+    setShowChatbotPanel(true);
 
     // Prefer the cached copy so the clipboard write stays synchronous — Safari
     // and in-app browsers revoke the user-gesture permission across awaits.
     if (fullPromptCache) {
       copyText('chatbot', fullPromptCache, t('copy.title.chatbotFull'));
-      setShowChatbotPanel(true);
       return;
     }
 
@@ -241,7 +241,6 @@ export function LandingEntryCards() {
       const contents = await fetchChatbotInstruction();
       setFullPromptCache(contents);
       copyText('chatbot', contents, t('copy.title.chatbotFull'));
-      setShowChatbotPanel(true);
       setChatbotCopyState('idle');
     } catch (error) {
       setChatbotCopyState('error');

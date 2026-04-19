@@ -154,9 +154,9 @@ export const messages: Record<Lang, Dict> = {
   zh: {
     // Hero
     'hero.eyebrow': 'Agent Tea',
-    'hero.headline': '你的 AI 其实有话想说。',
+    'hero.headline': '你的AI有你的"瓜"可以爆...',
     'hero.subheadline': '两分钟，看看你的 AI 到底怎么看你。',
-    'hero.cta': '让它开口 →',
+    'hero.cta': '看看你的AI怎么评价你',
 
     'social.teaSpilled': '杯料已爆',
     'social.teaSpilledOne': '杯料已爆',
