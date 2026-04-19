@@ -14,7 +14,7 @@ For each type:
 
 Example format:
 
-- `CKVG` → "Dream Client" / "Collaborative Vision Builder"
+- `CKVD` → "Dream Client" / "Collaborative Vision Builder"
 - Descriptor: "Clear asks, kind tone, big ideas, and trusts the agent to explore."
 
 ## Naming Principles
@@ -26,7 +26,7 @@ Example format:
 
 ## Output Template
 
-- "Your type: `CKVG`"
+- "Your type: `CKVD`"
 - "Nickname: Dream Client"
 - "Serious read: Collaborative Vision Builder"
 

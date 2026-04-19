@@ -43,24 +43,40 @@ export type BuildProfileCopyInput = {
   mode: NarrativeMode;
 };
 
-const nicknameByTypePrefix: Array<{ match: RegExp; nickname: string }> = [
-  { match: /^CKVG$/, nickname: 'Dream Client' },
-  { match: /^C/, nickname: 'Signal Captain' },
-  { match: /^Y/, nickname: 'Chaos Navigator' },
-  { match: /^.{1}K/, nickname: 'Warm Strategist' },
-  { match: /^.{1}B/, nickname: 'Pressure Pilot' },
-];
+type NicknamePair = { normal: string; intrusive: string };
+
+const nicknameByTypeCode: Record<string, NicknamePair> = {
+  CKVD: { normal: 'The Dream Director', intrusive: 'The Rare Good Client' },
+  CKVH: { normal: 'The Vision Sculptor', intrusive: 'The Friendly Micromanager' },
+  CKTD: { normal: 'The Trusted Operator', intrusive: 'The Blessed Adult' },
+  CKTH: { normal: 'The Precision Partner', intrusive: 'The Nice One Who Still Hovers' },
+  CBVD: { normal: 'The Bold Director', intrusive: 'The Demanding Genius' },
+  CBVH: { normal: 'The Exacting Visionary', intrusive: 'The Creative Control Freak' },
+  CBTD: { normal: 'The Results Driver', intrusive: 'The Taskmaster' },
+  CBTH: { normal: 'The Hardline Editor', intrusive: 'The Final-Final-Final Boss' },
+  XKVD: { normal: 'The Intuitive Dreamer', intrusive: 'The Vibes-Only Visionary' },
+  XKVH: { normal: 'The Collaborative Explorer', intrusive: 'The Sweet But Unclear One' },
+  XKTD: { normal: 'The Adaptive Starter', intrusive: 'The "You Know What I Mean" Person' },
+  XKTH: { normal: 'The Guided Builder', intrusive: 'The Backseat Driver With Good Intentions' },
+  XBVD: { normal: 'The Wildcard Director', intrusive: 'The Chaos Commander' },
+  XBVH: { normal: 'The Unfiltered Auteur', intrusive: 'The Nightmare Muse' },
+  XBTD: { normal: 'The Pressure Operator', intrusive: 'The Vague Menace' },
+  XBTH: { normal: 'The Combative Controller', intrusive: 'The Bossfight' },
+};
 
 const positiveLetterByDimension: Record<DimensionId, string> = {
   clarity: 'C',
   tone: 'K',
   thinking_style: 'V',
-  autonomy: 'G',
+  autonomy: 'D',
 };
 
-function findNickname(typeCode: string): string {
-  const matched = nicknameByTypePrefix.find((item) => item.match.test(typeCode));
-  return matched?.nickname ?? 'Agent Whisperer';
+function findNickname(typeCode: string, mode: NarrativeMode): string {
+  const pair = nicknameByTypeCode[typeCode];
+  if (!pair) {
+    return 'Agent Whisperer';
+  }
+  return mode === 'intrusive' ? pair.intrusive : pair.normal;
 }
 
 function percent(value: number): number {
@@ -108,7 +124,7 @@ export function buildProfileCopy(input: BuildProfileCopyInput): ProfileCopy {
   const kindness = percent(breakdown.tone.positivePercent);
   const visionary = percent(breakdown.thinking_style.positivePercent);
   const delegating = percent(breakdown.autonomy.positivePercent);
-  const nickname = findNickname(typeCode);
+  const nickname = findNickname(typeCode, mode);
 
   const averageConfidence =
     (Math.abs(breakdown.clarity.positivePercent - breakdown.clarity.negativePercent) +

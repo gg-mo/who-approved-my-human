@@ -11,10 +11,10 @@ const DIMENSIONS: Array<{
   positiveLetter: string;
   negativeLetter: string;
 }> = [
-  { id: 'clarity', positiveLetter: 'C', negativeLetter: 'Y' },
+  { id: 'clarity', positiveLetter: 'C', negativeLetter: 'X' },
   { id: 'tone', positiveLetter: 'K', negativeLetter: 'B' },
   { id: 'thinking_style', positiveLetter: 'V', negativeLetter: 'T' },
-  { id: 'autonomy', positiveLetter: 'G', negativeLetter: 'O' },
+  { id: 'autonomy', positiveLetter: 'D', negativeLetter: 'H' },
 ];
 
 function normalizeValue(value: number, reverseCoded: boolean): number {

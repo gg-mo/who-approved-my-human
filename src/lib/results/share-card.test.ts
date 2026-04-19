@@ -10,7 +10,7 @@ const breakdown = {
   clarity: {
     dominantLetter: 'C',
     positiveLetter: 'C',
-    negativeLetter: 'Y',
+    negativeLetter: 'X',
     positivePercent: 0.78,
     negativePercent: 0.22,
   },
@@ -29,9 +29,9 @@ const breakdown = {
     negativePercent: 0.35,
   },
   autonomy: {
-    dominantLetter: 'G',
-    positiveLetter: 'G',
-    negativeLetter: 'O',
+    dominantLetter: 'D',
+    positiveLetter: 'D',
+    negativeLetter: 'H',
     positivePercent: 0.58,
     negativePercent: 0.42,
   },
@@ -56,15 +56,15 @@ describe('share-card utils', () => {
   it('builds share text for both modes', () => {
     const normal = buildShareCardText({
       mode: 'normal',
-      typeCode: 'CKVG',
-      nickname: 'Dream Client',
+      typeCode: 'CKVD',
+      nickname: 'The Dream Director',
       highlights: ['84% Kind', '78% Clear', '65% Visionary'],
     });
 
     const intrusive = buildShareCardText({
       mode: 'intrusive',
-      typeCode: 'CKVG',
-      nickname: 'Dream Client',
+      typeCode: 'CKVD',
+      nickname: 'The Dream Director',
       highlights: ['84% Agent Charmer', '78% Crystal Clear', '65% Moonshot Brain'],
     });
 

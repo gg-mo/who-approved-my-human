@@ -20,9 +20,9 @@ export type CompareItem = {
 
 const dimensionLabel: Record<DimensionId, string> = {
   clarity: 'Clear vs Cryptic',
-  tone: 'Kind vs Combative',
+  tone: 'Kind vs Blunt',
   thinking_style: 'Visionary vs Tactical',
-  autonomy: 'Delegating vs Controlling',
+  autonomy: 'Delegating vs Hands-On',
 };
 
 function pct(value: number) {
