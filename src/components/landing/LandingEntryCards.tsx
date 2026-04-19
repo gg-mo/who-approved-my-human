@@ -30,6 +30,42 @@ async function fetchChatbotInstruction(): Promise<string> {
   return response.text();
 }
 
+function writeToClipboard(value: string): boolean {
+  // Some in-app browsers (WeChat, Instagram, Safari after async work) block the
+  // modern Clipboard API. Try it first, fall back to a hidden textarea +
+  // execCommand, and finally signal failure so the caller can show a manual
+  // copy panel.
+  try {
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      // Fire-and-forget; if this rejects we already have the legacy path below.
+      navigator.clipboard.writeText(value).catch(() => undefined);
+    }
+  } catch {
+    // Ignore — fall through to legacy path.
+  }
+
+  if (typeof document === 'undefined') return false;
+
+  try {
+    const textarea = document.createElement('textarea');
+    textarea.value = value;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.top = '0';
+    textarea.style.left = '0';
+    textarea.style.opacity = '0';
+    textarea.style.pointerEvents = 'none';
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(textarea);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
 function getReferralContext() {
   const referralCode = localStorage.getItem('agentTeaReferral') ?? undefined;
   const referrerSessionId = referralCode && /^[0-9a-f-]{36}$/i.test(referralCode) ? referralCode : undefined;
@@ -48,8 +84,11 @@ export function LandingEntryCards() {
   const [codingFlowMessage, setCodingFlowMessage] = useState<string | null>(null);
   const [chatbotCopyState, setChatbotCopyState] = useState<ChatbotCopyState>('idle');
   const [chatbotCopyError, setChatbotCopyError] = useState<string | null>(null);
+  const [fullPromptCache, setFullPromptCache] = useState<string | null>(null);
+  const [manualCopy, setManualCopy] = useState<{ title: string; value: string } | null>(null);
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
   const chatbotPanelRef = useRef<HTMLDivElement | null>(null);
+  const manualCopyRef = useRef<HTMLTextAreaElement | null>(null);
 
   const codingInstructionUrl = origin ? `${origin}/instructions/coding-agent.md` : '/instructions/coding-agent.md';
 
@@ -97,6 +136,30 @@ export function LandingEntryCards() {
   }, [codingSessionId, selectedMode]);
 
   useEffect(() => {
+    if (selectedMode !== 'chatbot' || fullPromptCache) return;
+    let cancelled = false;
+    void fetchChatbotInstruction()
+      .then((contents) => {
+        if (!cancelled) setFullPromptCache(contents);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedMode, fullPromptCache]);
+
+  useEffect(() => {
+    if (!manualCopy) return;
+    const node = manualCopyRef.current;
+    if (!node) return;
+    const timer = window.setTimeout(() => {
+      node.focus();
+      node.select();
+    }, 60);
+    return () => window.clearTimeout(timer);
+  }, [manualCopy]);
+
+  useEffect(() => {
     if (!showChatbotPanel) return;
     const timer = window.setTimeout(() => {
       const node = chatbotPanelRef.current;
@@ -113,12 +176,16 @@ export function LandingEntryCards() {
     return 'Copied — paste this into your chatbot.';
   }, [copiedKey]);
 
-  async function copyText(key: Mode, value: string) {
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(value);
+  function copyText(key: Mode, value: string, manualTitle: string): boolean {
+    const ok = writeToClipboard(value);
+    if (ok) {
+      setCopiedKey(key);
+      window.setTimeout(() => setCopiedKey(null), 1800);
+      setManualCopy(null);
+      return true;
     }
-    setCopiedKey(key);
-    window.setTimeout(() => setCopiedKey(null), 1800);
+    setManualCopy({ title: manualTitle, value });
+    return false;
   }
 
   async function ensureCodingSession() {
@@ -161,17 +228,27 @@ export function LandingEntryCards() {
     ].join('\n');
   }
 
-  async function copyChatbotLinkPrompt() {
-    await copyText('chatbot', buildChatbotLinkPrompt(origin));
+  function copyChatbotLinkPrompt() {
+    copyText('chatbot', buildChatbotLinkPrompt(origin), 'Chatbot prompt');
     setShowChatbotPanel(true);
   }
 
   async function copyChatbotFullPrompt() {
+    setChatbotCopyError(null);
+
+    // Prefer the cached copy so the clipboard write stays synchronous — Safari
+    // and in-app browsers revoke the user-gesture permission across awaits.
+    if (fullPromptCache) {
+      copyText('chatbot', fullPromptCache, 'Full chatbot prompt');
+      setShowChatbotPanel(true);
+      return;
+    }
+
     try {
       setChatbotCopyState('loading');
-      setChatbotCopyError(null);
       const contents = await fetchChatbotInstruction();
-      await copyText('chatbot', contents);
+      setFullPromptCache(contents);
+      copyText('chatbot', contents, 'Full chatbot prompt');
       setShowChatbotPanel(true);
       setChatbotCopyState('idle');
     } catch (error) {
@@ -188,7 +265,7 @@ export function LandingEntryCards() {
       setCodingFlowMessage('Preparing your private round…');
 
       const sessionId = await ensureCodingSession();
-      await copyText('coding', buildCodingInstruction(sessionId));
+      copyText('coding', buildCodingInstruction(sessionId), 'Coding agent instruction');
 
       setCodingFlowState('waiting');
       setCodingFlowMessage('Copied. Paste it to your coding agent — your reveal opens automatically.');
@@ -543,6 +620,77 @@ export function LandingEntryCards() {
         <p className="tea-toast text-[0.8rem] text-slate-300/90 lg:col-span-2" role="status" aria-live="polite">
           {copyLabel}
         </p>
+      ) : null}
+
+      {manualCopy ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="manual-copy-title"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 px-4 pb-6 pt-10 backdrop-blur sm:items-center sm:p-6"
+          onClick={() => setManualCopy(null)}
+        >
+          <div
+            className="w-full max-w-lg rounded-[24px] border border-white/[0.1] bg-slate-950/95 p-5 shadow-[0_30px_80px_-30px_rgba(0,0,0,0.8)]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="tea-eyebrow text-cyan-200/80">Copy manually</p>
+                <h3 id="manual-copy-title" className="mt-1 text-lg font-semibold text-white">
+                  {manualCopy.title}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setManualCopy(null)}
+                aria-label="Close"
+                className="tea-press inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-slate-300 hover:bg-white/10 hover:text-white"
+              >
+                ×
+              </button>
+            </div>
+            <p className="mt-2 text-[0.82rem] leading-5 text-slate-400">
+              Your browser blocked the auto-copy (common in WeChat, Instagram, and
+              similar in-app browsers). Long-press the text below, choose{' '}
+              <strong className="text-slate-200">Select All</strong>, then{' '}
+              <strong className="text-slate-200">Copy</strong>.
+            </p>
+            <textarea
+              ref={manualCopyRef}
+              value={manualCopy.value}
+              readOnly
+              spellCheck={false}
+              autoCapitalize="off"
+              autoComplete="off"
+              autoCorrect="off"
+              className="mt-3 h-40 w-full resize-none rounded-2xl border border-white/[0.1] bg-black/40 p-3 font-mono text-[0.85rem] text-slate-100 outline-none focus:border-white/25 focus:bg-black/60"
+              onFocus={(event) => event.currentTarget.select()}
+            />
+            <div className="mt-4 flex flex-wrap items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  manualCopyRef.current?.focus();
+                  manualCopyRef.current?.select();
+                }}
+                className="tea-press inline-flex rounded-full border border-white/15 bg-white/[0.06] px-4 py-2 text-[0.85rem] font-medium text-slate-100 hover:bg-white/[0.1]"
+              >
+                Select all
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const ok = writeToClipboard(manualCopy.value);
+                  if (ok) setManualCopy(null);
+                }}
+                className="tea-press inline-flex rounded-full bg-white px-4 py-2 text-[0.85rem] font-semibold text-slate-950 hover:bg-slate-100"
+              >
+                Try copy again
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
     </section>
   );
