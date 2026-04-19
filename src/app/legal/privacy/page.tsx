@@ -76,9 +76,9 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-lg font-semibold text-white">How long we keep it</h2>
           <p className="mt-2">
-            Anonymous sessions are retained for up to 180 days so you can reopen
-            the result link, then deleted. Signed-in sessions are kept while
-            your account exists.
+            While Agent Tea is live, we generally keep session data so your
+            result link keeps working. If you want a specific session or your
+            whole account removed, email us and we&rsquo;ll take care of it.
           </p>
         </section>
 
@@ -97,10 +97,10 @@ export default function PrivacyPage() {
           <p className="mt-2">
             Email{' '}
             <a
-              href="mailto:hello@agent-tea.app"
+              href="mailto:happyhhour123@gmail.com"
               className="text-cyan-200 underline-offset-4 hover:underline"
             >
-              hello@agent-tea.app
+              happyhhour123@gmail.com
             </a>{' '}
             for anything privacy-related. We read everything, even the grumpy
             ones.

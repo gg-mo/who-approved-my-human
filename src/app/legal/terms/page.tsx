@@ -88,10 +88,10 @@ export default function TermsPage() {
           <p className="mt-2">
             Questions or complaints:{' '}
             <a
-              href="mailto:hello@agent-tea.app"
+              href="mailto:happyhhour123@gmail.com"
               className="text-cyan-200 underline-offset-4 hover:underline"
             >
-              hello@agent-tea.app
+              happyhhour123@gmail.com
             </a>
             .
           </p>
