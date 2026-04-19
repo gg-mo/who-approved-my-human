@@ -12,36 +12,41 @@ export function MoodToggle({ mode, onChange }: MoodToggleProps) {
   const isIntrusive = mode === 'intrusive';
 
   return (
-    <div className="relative mx-auto flex w-full max-w-md items-start justify-between gap-4">
-      <div className="flex flex-col items-center gap-3">
-        <MoodButton
-          label="Angel mode"
-          active={!isIntrusive}
-          onClick={() => onChange('normal')}
-          accent="cyan"
-        >
-          <AngelIcon />
-        </MoodButton>
-        <CaptionPill active={!isIntrusive} accent="cyan">Keep it nice</CaptionPill>
-      </div>
-
-      <div className="pointer-events-none flex-1 self-center">
+    <div className="relative mx-auto w-full max-w-md">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 flex items-center justify-center"
+      >
         <LobsterMascot
           variant="hero"
-          className="tea-mascot-bob mx-auto w-64 select-none drop-shadow-[0_28px_40px_rgba(255,98,74,0.35)] sm:w-72"
+          className="tea-mascot-bob w-64 select-none drop-shadow-[0_28px_40px_rgba(255,98,74,0.35)] sm:w-72"
         />
       </div>
 
-      <div className="flex flex-col items-center gap-3">
-        <MoodButton
-          label="Devil mode"
-          active={isIntrusive}
-          onClick={() => onChange('intrusive')}
-          accent="rose"
-        >
-          <DevilIcon />
-        </MoodButton>
-        <CaptionPill active={isIntrusive} accent="rose">Spill the tea</CaptionPill>
+      <div className="relative flex items-start justify-between gap-4">
+        <div className="flex flex-col items-center gap-3">
+          <MoodButton
+            label="Angel mode"
+            active={!isIntrusive}
+            onClick={() => onChange('normal')}
+            accent="cyan"
+          >
+            <AngelIcon />
+          </MoodButton>
+          <CaptionPill active={!isIntrusive} accent="cyan">Keep it nice</CaptionPill>
+        </div>
+
+        <div className="flex flex-col items-center gap-3">
+          <MoodButton
+            label="Devil mode"
+            active={isIntrusive}
+            onClick={() => onChange('intrusive')}
+            accent="rose"
+          >
+            <DevilIcon />
+          </MoodButton>
+          <CaptionPill active={isIntrusive} accent="rose">Spill the tea</CaptionPill>
+        </div>
       </div>
     </div>
   );
@@ -135,16 +140,18 @@ function AngelIcon() {
         strokeLinecap="round"
       />
       <path
-        d="M12 30 Q 6 34 10 40 Q 14 38 16 36"
-        fill="#fef3c7"
-        stroke="#facc15"
-        strokeWidth="1.5"
+        d="M18 28 Q 4 28 6 40 Q 12 34 20 34 Z"
+        fill="#ffffff"
+        stroke="#e2e8f0"
+        strokeWidth="1.2"
+        strokeLinejoin="round"
       />
       <path
-        d="M52 30 Q 58 34 54 40 Q 50 38 48 36"
-        fill="#fef3c7"
-        stroke="#facc15"
-        strokeWidth="1.5"
+        d="M46 28 Q 60 28 58 40 Q 52 34 44 34 Z"
+        fill="#ffffff"
+        stroke="#e2e8f0"
+        strokeWidth="1.2"
+        strokeLinejoin="round"
       />
     </svg>
   );
@@ -175,10 +182,32 @@ function DevilIcon() {
         fill="#1f0a0a"
       />
       <path
-        d="M30 40 L 32 43 L 34 40"
+        d="M28.5 40 L 30 43.2 L 31.5 40 Z"
         fill="#fafafa"
         stroke="#1f0a0a"
-        strokeWidth="0.8"
+        strokeWidth="0.5"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M32.5 40 L 34 43.2 L 35.5 40 Z"
+        fill="#fafafa"
+        stroke="#1f0a0a"
+        strokeWidth="0.5"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M48 46 Q 56 48 58 54 Q 59 57 61 56"
+        fill="none"
+        stroke="#7f1d1d"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
+      <path
+        d="M58 54 L 61 56 L 60 53 Z"
+        fill="#7f1d1d"
+        stroke="#7f1d1d"
+        strokeWidth="0.6"
+        strokeLinejoin="round"
       />
     </svg>
   );
