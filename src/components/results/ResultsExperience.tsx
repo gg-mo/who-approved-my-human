@@ -618,7 +618,6 @@ function TeaSpilledCard({ count }: { count: number }) {
 
   useEffect(() => {
     if (count <= 0) {
-      setDisplay(0);
       return;
     }
     const duration = 900;
