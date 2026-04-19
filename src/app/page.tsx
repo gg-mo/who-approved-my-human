@@ -89,7 +89,7 @@ export default function Home() {
           <div className="tea-scale-in tea-stage-5 mx-auto flex w-full max-w-sm items-center justify-center">
             <LobsterMascot
               variant="hero"
-              className="h-auto w-full drop-shadow-[0_24px_40px_rgba(255,90,100,0.28)]"
+              className="tea-mascot-bob h-auto w-full drop-shadow-[0_24px_40px_rgba(255,90,100,0.28)]"
             />
           </div>
         </div>
