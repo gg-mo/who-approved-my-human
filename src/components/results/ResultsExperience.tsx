@@ -233,7 +233,7 @@ export function ResultsExperience({
                   : 'border-cyan-200/35 bg-cyan-200/10 text-cyan-100'
               }`}
             >
-              Agent Tea dossier
+              Your dossier
             </p>
             <h1 className="mt-5 flex gap-2 sm:gap-3" aria-label={result.typeCode}>
               {result.typeCode.split('').map((letter, index) => (
