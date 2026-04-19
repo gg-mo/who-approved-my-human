@@ -6,9 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { MoodToggle } from '@/components/results/MoodToggle';
 import { type NarrativeMode } from '@/lib/results/copy-content';
 import { buildProfileCopy, getDimensionLabels } from '@/lib/results/profile-copy';
-import { buildShareCardHighlights, buildShareCardText } from '@/lib/results/share-card';
 import { getTypeContent } from '@/lib/results/type-content';
-import { MIN_SAMPLE_FOR_SOCIAL_PROOF } from '@/lib/scoring/constants';
 import type { DimensionId } from '@/lib/scoring/types';
 
 type ReplayAnswer = {
@@ -67,8 +65,6 @@ type SocialProof = {
   rarest: { typeCode: string; count: number } | null;
 };
 
-const CLAIM_SUCCESS_REDIRECT_MS = 1100;
-
 const DIMENSION_ORDER: DimensionId[] = ['clarity', 'tone', 'thinking_style', 'autonomy'];
 
 const AXIS_BLURBS: Record<
@@ -105,20 +101,16 @@ export function ResultsExperience({
   result,
   sessionId,
   socialProof,
-  isSignedIn,
 }: {
   result: ResultsPayload;
   sessionId: string;
   socialProof?: SocialProof;
-  isSignedIn?: boolean;
 }) {
   const [mode, setMode] = useState<NarrativeMode>('normal');
-  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
   const [quoteCopyState, setQuoteCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
   const [compareSessionId, setCompareSessionId] = useState('');
   const [compareStatus, setCompareStatus] = useState<'idle' | 'working' | 'error'>('idle');
   const [compareError, setCompareError] = useState<string | null>(null);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'working' | 'saved' | 'error'>('idle');
 
   const typeContent = useMemo(() => getTypeContent(result.typeCode), [result.typeCode]);
 
@@ -135,21 +127,6 @@ export function ResultsExperience({
   );
   const dimensionLabels = useMemo(() => getDimensionLabels(mode), [mode]);
   const shareCardUrl = `/api/share-card/${sessionId}?mode=${mode}`;
-  const shareHighlights = useMemo(
-    () => buildShareCardHighlights({ mode, breakdown: result.dimensionBreakdown }),
-    [mode, result.dimensionBreakdown],
-  );
-  const shareText = useMemo(
-    () =>
-      buildShareCardText({
-        mode,
-        typeCode: result.typeCode,
-        nickname: profileCopy.nickname,
-        highlights: shareHighlights,
-      }),
-    [mode, profileCopy.nickname, result.typeCode, shareHighlights],
-  );
-  const minimumSample = socialProof?.minimumSample ?? MIN_SAMPLE_FOR_SOCIAL_PROOF;
 
   useEffect(() => {
     if (profileCopy.moderation.rewriteCount <= 0) {
@@ -175,19 +152,6 @@ export function ResultsExperience({
       });
     } catch {
       // Non-blocking analytics.
-    }
-  }
-
-  async function copyShareText() {
-    try {
-      const origin = window.location.origin;
-      const payload = `${shareText}\n${origin}/results/${sessionId}`;
-      await navigator.clipboard.writeText(payload);
-      setCopyState('copied');
-      window.setTimeout(() => setCopyState('idle'), 2200);
-      await recordEvent('share_click', { mode, action: 'copy_text', typeCode: result.typeCode });
-    } catch {
-      setCopyState('error');
     }
   }
 
@@ -235,23 +199,6 @@ export function ResultsExperience({
     } catch (error) {
       setCompareStatus('error');
       setCompareError(error instanceof Error ? error.message : 'Could not build a compare view.');
-    }
-  }
-
-  async function claimSession() {
-    setSaveStatus('working');
-
-    try {
-      const response = await fetch(`/api/sessions/${sessionId}/claim`, { method: 'POST' });
-
-      if (!response.ok) {
-        throw new Error('Could not save to your profile.');
-      }
-
-      setSaveStatus('saved');
-      window.setTimeout(() => window.location.assign('/profile'), CLAIM_SUCCESS_REDIRECT_MS);
-    } catch {
-      setSaveStatus('error');
     }
   }
 
@@ -318,18 +265,11 @@ export function ResultsExperience({
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300/80">{profileCopy.oneLiner}</p>
 
             <div className="mt-8 flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={copyShareText}
-                className="tea-press rounded-full bg-cyan-300 px-5 py-2.5 text-sm font-semibold text-slate-950 hover:bg-cyan-200"
-              >
-                Share result
-              </button>
               <Link
                 href="/"
-                className="tea-press rounded-full border border-white/20 bg-white/5 px-5 py-2.5 text-sm font-semibold text-slate-100 hover:bg-white/10"
+                className="tea-press rounded-full bg-cyan-300 px-5 py-2.5 text-sm font-semibold text-slate-950 hover:bg-cyan-200"
               >
-                Retake
+                Wanna know what your agent actually thinks of you?
               </Link>
               <a
                 href={shareCardUrl}
@@ -347,21 +287,11 @@ export function ResultsExperience({
                 Share card
               </a>
             </div>
-            {copyState === 'copied' ? (
-              <p className="tea-toast mt-3 text-xs text-emerald-200" role="status" aria-live="polite">
-                Copied share text to clipboard.
-              </p>
-            ) : null}
-            {copyState === 'error' ? (
-              <p className="tea-toast mt-3 text-xs text-rose-200" role="status" aria-live="polite">
-                Clipboard blocked. Please copy manually.
-              </p>
-            ) : null}
           </div>
 
           <div className="tea-scale-in" style={{ animationDelay: '120ms' }}>
             <MoodToggle mode={mode} onChange={setMode} />
-            <p className="mt-6 text-center text-xs uppercase tracking-wide text-slate-400">
+            <p className="mt-24 text-center text-xs uppercase tracking-wide text-slate-400 sm:mt-28">
               {isIntrusive ? "Your agent's intrusive thoughts" : 'What your agent says'}
             </p>
           </div>
@@ -677,78 +607,20 @@ export function ResultsExperience({
           </article>
 
           <article
-            className="tea-rise-in rounded-3xl border border-white/10 bg-white/5 p-6"
+            className="tea-rise-in flex flex-col justify-center rounded-3xl border border-white/10 bg-white/5 p-6"
             style={{ animationDelay: '540ms' }}
           >
-            <h2 className="text-lg font-semibold text-cyan-100">Save your reveal</h2>
-            <p className="mt-2 text-sm text-slate-300">
-              Sign in to keep every reveal in one place and revisit comparisons anytime.
+            <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
+              Tea spilled so far
             </p>
-            <div className="mt-4">
-              {isSignedIn ? (
-                <button
-                  type="button"
-                  disabled={saveStatus === 'working' || saveStatus === 'saved'}
-                  onClick={claimSession}
-                  className="tea-press inline-flex rounded-xl bg-emerald-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-200 disabled:opacity-70"
-                >
-                  {saveStatus === 'working'
-                    ? 'Saving…'
-                    : saveStatus === 'saved'
-                      ? 'Saved ✓'
-                      : 'Save to my profile'}
-                </button>
-              ) : (
-                <a
-                  href={`/auth?claim=${sessionId}`}
-                  className="tea-press inline-flex rounded-xl bg-emerald-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-200"
-                >
-                  Sign in to save
-                </a>
-              )}
-              {saveStatus === 'saved' ? (
-                <p className="tea-toast mt-2 text-xs text-emerald-200" role="status" aria-live="polite">
-                  Saved. Opening your profile…
-                </p>
-              ) : null}
-              {saveStatus === 'error' ? (
-                <p className="tea-toast mt-2 text-xs text-rose-200" role="status" aria-live="polite">
-                  Could not save this reveal. Please try again.
-                </p>
-              ) : null}
-            </div>
-
-            <div className="mt-6 border-t border-white/10 pt-5">
-              <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
-                This week in Agent Tea
-              </p>
-              {socialProof && socialProof.sampleCount >= socialProof.minimumSample ? (
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-3">
-                    <p className="text-[10px] uppercase text-slate-400">Most common</p>
-                    <p className="mt-1 text-xl font-black text-cyan-200">
-                      {socialProof.mostCommon?.typeCode}
-                    </p>
-                    <p className="text-[11px] text-slate-400">
-                      {socialProof.mostCommon?.count} reveals
-                    </p>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-3">
-                    <p className="text-[10px] uppercase text-slate-400">Rarest</p>
-                    <p className="mt-1 text-xl font-black text-orange-200">
-                      {socialProof.rarest?.typeCode}
-                    </p>
-                    <p className="text-[11px] text-slate-400">
-                      {socialProof.rarest?.count} reveals
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <p className="mt-2 text-xs text-slate-400">
-                  Unlocks after {minimumSample} weekly reveals.
-                </p>
-              )}
-            </div>
+            <p className="mt-3 text-5xl font-black text-cyan-200 sm:text-6xl">
+              {socialProof?.sampleCount ?? 0}
+            </p>
+            <p className="mt-2 text-sm text-slate-300">
+              {(socialProof?.sampleCount ?? 0) === 1
+                ? 'cup of tea and counting.'
+                : 'cups of tea and counting.'}
+            </p>
           </article>
         </section>
       </div>
