@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
 import { MoodToggle } from '@/components/results/MoodToggle';
@@ -109,9 +108,6 @@ export function ResultsExperience({
 }) {
   const [mode, setMode] = useState<NarrativeMode>('normal');
   const [quoteCopyState, setQuoteCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
-  const [compareSessionId, setCompareSessionId] = useState('');
-  const [compareStatus, setCompareStatus] = useState<'idle' | 'working' | 'error'>('idle');
-  const [compareError, setCompareError] = useState<string | null>(null);
 
   const typeContent = useMemo(() => getTypeContent(result.typeCode), [result.typeCode]);
 
@@ -169,40 +165,6 @@ export function ResultsExperience({
     }
   }
 
-  async function createCompareLink() {
-    const target = compareSessionId.trim();
-
-    if (!target) {
-      setCompareStatus('error');
-      setCompareError('Paste another reveal code first.');
-      return;
-    }
-
-    setCompareStatus('working');
-    setCompareError(null);
-
-    try {
-      const response = await fetch('/api/compare', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sessionIds: [sessionId, target],
-          labels: ['This reveal', 'Other reveal'],
-        }),
-      });
-      const payload = await response.json();
-
-      if (!response.ok || !payload.compareId) {
-        throw new Error(payload.error ?? 'Could not build a compare view.');
-      }
-
-      window.location.assign(`/compare/${payload.compareId}`);
-    } catch (error) {
-      setCompareStatus('error');
-      setCompareError(error instanceof Error ? error.message : 'Could not build a compare view.');
-    }
-  }
-
   const isIntrusive = mode === 'intrusive';
   const displayName = isIntrusive ? typeContent.intrusiveName : typeContent.normalName;
   const akaName = isIntrusive ? typeContent.normalName : typeContent.intrusiveName;
@@ -211,7 +173,7 @@ export function ResultsExperience({
 
   return (
     <main
-      className={`min-h-screen px-6 py-12 text-slate-100 transition-colors duration-500 sm:px-10 ${
+      className={`min-h-screen px-6 pb-12 pt-24 text-slate-100 transition-colors duration-500 sm:px-10 sm:pt-28 ${
         isIntrusive ? 'tea-mood-intrusive' : 'tea-mood-normal'
       }`}
       style={{
@@ -267,12 +229,6 @@ export function ResultsExperience({
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300/80">{profileCopy.oneLiner}</p>
 
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link
-                href="/"
-                className="tea-press rounded-full bg-cyan-300 px-5 py-2.5 text-sm font-semibold text-slate-950 hover:bg-cyan-200"
-              >
-                Wanna know what your agent actually thinks of you?
-              </Link>
               <a
                 href={shareCardUrl}
                 target="_blank"
@@ -555,49 +511,32 @@ export function ResultsExperience({
         {/* 10. Bottom CTA — compare + save + social proof */}
         <section className="grid gap-6 lg:grid-cols-2">
           <article
-            className="tea-rise-in rounded-3xl border border-white/10 bg-white/5 p-6"
+            className="tea-rise-in relative overflow-hidden rounded-3xl border border-cyan-200/30 bg-gradient-to-br from-cyan-400/10 via-white/5 to-transparent p-6 shadow-[0_0_60px_-24px_rgba(34,211,238,0.45)]"
             style={{ animationDelay: '500ms' }}
           >
-            <h2 className="text-lg font-semibold text-cyan-100">Compare with another reveal</h2>
-            <p className="mt-2 text-sm text-slate-300">
-              Send this to the agent who survived your workflow.
+            <p className="text-xs font-semibold uppercase tracking-widest text-cyan-200/80">
+              Have another agent?
             </p>
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <input
-                value={compareSessionId}
-                onChange={(event) => setCompareSessionId(event.target.value)}
-                placeholder="Paste reveal code"
-                aria-invalid={compareStatus === 'error'}
-                aria-describedby={compareStatus === 'error' ? 'compare-error' : undefined}
-                className="w-full max-w-sm rounded-xl border border-white/20 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-cyan-200/60"
-              />
-              <button
-                type="button"
-                disabled={compareStatus === 'working'}
-                onClick={createCompareLink}
-                className="tea-press rounded-xl bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200 disabled:cursor-wait disabled:opacity-70"
-              >
-                {compareStatus === 'working' ? 'Building…' : 'Compare'}
-              </button>
-            </div>
-            {compareStatus === 'error' && compareError ? (
-              <p id="compare-error" role="alert" className="tea-toast mt-2 text-xs text-rose-200">
-                {compareError}
-              </p>
-            ) : null}
+            <h2 className="mt-1 text-xl font-bold text-slate-100">
+              Got another coding agent or chatbot you lean on?
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-slate-300">
+              Find out what <em className="not-italic font-semibold text-orange-100">their</em> tea
+              about you is. Same four dimensions, a fresh set of eyes.
+            </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <a
                 href={`/?ref=${sessionId}`}
                 onClick={() => {
                   void recordEvent('share_click', {
                     mode,
-                    action: 'challenge_friend',
+                    action: 'run_another_agent',
                     typeCode: result.typeCode,
                   });
                 }}
-                className="tea-press rounded-full border border-cyan-200/40 bg-cyan-200/10 px-4 py-2 text-xs font-semibold text-cyan-100 hover:bg-cyan-200/20"
+                className="tea-press rounded-full bg-cyan-300 px-5 py-2.5 text-sm font-semibold text-slate-950 hover:bg-cyan-200"
               >
-                Challenge a friend
+                Spill tea with another agent
               </a>
               <a
                 href={`/replay/${sessionId}`}
