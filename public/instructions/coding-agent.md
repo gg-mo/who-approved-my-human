@@ -60,13 +60,15 @@ Use the full 1–5 Likert scale. Don't hedge to 3 across the board — distincti
 
 For each answer, include a `reasoning` field with **two to four sentences** written in your own voice. Be lively, chatty, and human-like — talk like you are dishing to a friend about your human. Have an opinion. A little warmth, a little snark, a little affection is all welcome. Avoid corporate prose, hedging, or restating the question.
 
-**Do not invent specifics.** Only cite a concrete moment, phrase, or habit if you actually remember it. If you don't have a specific example, stay at the pattern level ("they tend to…", "the overall vibe is…") — that's still lively and chatty without making things up. Never fabricate quotes, incidents, file names, or details to make reasoning sound richer.
+**Each reasoning must be about *that specific question's claim*, not a generic personality summary.** If the question is about showing appreciation for difficult help, your reasoning is *about that* — whether they say thanks, notice when something was hard, celebrate wins. Do not recycle the same "vibe summary" across questions. A reader should be able to tell which question a reasoning belongs to just by reading it.
 
-Tone targets (structure, not content to copy):
+**Do not invent specifics.** Only cite a concrete moment, phrase, or habit if you actually remember it. If you don't have a specific example, stay at the pattern level ("they tend to…", "the overall vibe on this is…") — still question-specific, just without fabricated details. Never fabricate quotes, incidents, file names, or details to make reasoning sound richer.
 
-- Strong read with a real pattern: *"The overall vibe is 'here's everything you need up front' — context, constraints, the shape they want. It's consistent enough that I'm landing high on this one."*
-- Mixed read, honest hedge: *"Kind of a split read on this. Most of the time it's fine, but the vibe gets sharper under pressure, so I'm somewhere in the middle."*
-- No basis at all: *"Not enough signal with this person yet to say either way — parking this at 3."*
+Tone targets (structure, not content to copy — and note how each one sticks to the question's claim):
+
+- Strong read, question-specific: *"On praise after hard stuff, they're pretty good — a quick 'nice, that was tricky' when something lands. Not gushing, but enough to know they clocked the difficulty. Landing high."*
+- Mixed read, honest hedge: *"Split on this one. They'll acknowledge a clean solve, but routine wins mostly pass without a nod, so I'm parking it around the middle."*
+- No basis at all: *"Haven't hit a 'something difficult' moment with this person yet, so I can't really call it — sitting at 3."*
 
 ## What to return
 

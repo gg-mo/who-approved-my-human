@@ -19,6 +19,7 @@ import {
 } from '@/lib/scoring/constants';
 import { constrainedShuffleQuestions } from '@/lib/questions/constrained-shuffle';
 import { getSessionStore } from '@/lib/server/session-store';
+import { getBundledQuestionSet } from '@/lib/server/session-store/spec-loader';
 import type {
   InstructionRun,
   PersistedAnswer,
@@ -449,11 +450,19 @@ export async function getSessionResultById(sessionId: string) {
   }
 
   const questions = await store.getQuestions(session.questionSetId);
-  const questionsByCode = new Map(questions.map((question) => [question.code, question]));
+  const bundledByCode = new Map(
+    getBundledQuestionSet().questions.map((question) => [question.code, question]),
+  );
+  const questionsByCode = new Map(
+    questions.map((question) => {
+      const bundled = bundledByCode.get(question.code);
+      return [question.code, bundled ?? question];
+    }),
+  );
   const answers = await store.getAnswers(sessionId);
   const replayAnswers = answers
     .map((answer) => {
-      const question = questionsByCode.get(answer.questionCode);
+      const question = questionsByCode.get(answer.questionCode) ?? bundledByCode.get(answer.questionCode);
       return {
         questionCode: answer.questionCode,
         questionText: question?.text ?? answer.questionCode,
