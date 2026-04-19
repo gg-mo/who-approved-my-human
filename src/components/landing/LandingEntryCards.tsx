@@ -478,7 +478,15 @@ export function LandingEntryCards() {
               inputMode="text"
               className="mt-4 h-28 w-full rounded-2xl border border-white/[0.08] bg-black/40 px-4 py-3 font-mono text-base text-slate-100 outline-none focus:border-white/20 focus:bg-black/50"
             />
-            <div className="mt-4 flex flex-wrap items-center gap-3">
+            <div className="mt-5 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <button
+                type="button"
+                onClick={decodeChatbotPayload}
+                disabled={decodeState.status === 'working'}
+                className="tea-press inline-flex w-full justify-center rounded-full bg-cyan-300 px-6 py-3 text-[0.95rem] font-semibold text-slate-950 shadow-[0_10px_30px_-10px_rgba(34,211,238,0.6)] hover:bg-cyan-200 disabled:cursor-wait disabled:opacity-75 sm:w-auto"
+              >
+                {decodeState.status === 'working' ? 'Decoding…' : 'Reveal my type'}
+              </button>
               <button
                 type="button"
                 onClick={async () => {
@@ -491,17 +499,9 @@ export function LandingEntryCards() {
                     // Clipboard permission denied — user can long-press paste instead.
                   }
                 }}
-                className="tea-press inline-flex rounded-full border border-white/15 bg-white/[0.06] px-5 py-2.5 text-[0.875rem] font-medium text-slate-100 hover:bg-white/[0.1]"
+                className="text-[0.8rem] font-medium text-slate-400 underline-offset-4 transition-colors hover:text-slate-200 hover:underline"
               >
-                Paste from clipboard
-              </button>
-              <button
-                type="button"
-                onClick={decodeChatbotPayload}
-                disabled={decodeState.status === 'working'}
-                className="tea-press inline-flex rounded-full bg-white px-5 py-2.5 text-[0.875rem] font-medium text-slate-950 hover:bg-slate-100 disabled:cursor-wait disabled:opacity-75"
-              >
-                {decodeState.status === 'working' ? 'Decoding…' : 'Reveal my type'}
+                or paste from clipboard
               </button>
             </div>
 
